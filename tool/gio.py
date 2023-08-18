@@ -905,7 +905,7 @@ def step3_output(data):
             textout.write(thing)
         gotmeta = True
         yield thing
-    np.savez_compressed(out.file, *out.result, meta=out.meta)
+    #np.savez_compressed(out.file, *out.result, meta=out.meta)
     print("Step 3: closing output file")
     out.close()
     textout.close()
@@ -1049,7 +1049,7 @@ def step4_output(data):
     for land, ocean in data:
         out.write(ocean)
         yield land, ocean
-    np.savez_compressed(out.file, *out.result, meta=out.meta)
+    #np.savez_compressed(out.file, *out.result, meta=out.meta)
     print("Step4: closing output file")
     out.close()
     progress = open(PROGRESS_DIR + 'progress.txt', 'a')
@@ -1161,7 +1161,7 @@ def step5_bx_output(meta, data):
         result.append(rec)
         yield record
 
-    np.savez_compressed(boxf, *result, meta=info)
+    #np.savez_compressed(boxf, *result, meta=info)
     print("Step 5: Closing box file:", boxf.name)
     boxf.close()
     progress = open(PROGRESS_DIR + 'progress.txt', 'a')
@@ -1538,7 +1538,7 @@ Year  Glob  NHem  SHem    -90N  -24N  -24S    -90N  -64N  -44N  -24N  -EQU  -24S
     meta_data = np.array(meta_data, dtype=object)
     for jz in range(jzm):
         result.append([[zone_titles[jz].encode()], np.array(data[jz]).ravel()])
-    np.savez_compressed(zono, *result, meta=meta_data)
+    #np.savez_compressed(zono, *result, meta=meta_data)
     zono.close()
 
 
