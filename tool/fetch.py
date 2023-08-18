@@ -128,13 +128,15 @@ class Fetcher(object):
         public_dir = url.replace("ghcnm.tavg.qcf.dat", "")
         import datetime
         import urllib.request as urllib
-        response = urllib.urlopen(public_dir)
+        import ssl
+        context = ssl._create_unverified_context()
+        response = urllib.urlopen(public_dir, context=context)
         html = response.read().decode()
         filenames = re.findall(r'href=[\'"]?([^\'" >]+)', html)
         ghcn_filenames = [x for x in filenames if x[-4:] == ".dat" and "v4" in x]
         last_modifieds = []
         for file in ghcn_filenames:
-            conn = urllib.urlopen(public_dir + file)
+            conn = urllib.urlopen(public_dir + file, context=context)
             last_modified = conn.headers["last-modified"]
             last_modified = datetime.datetime.strptime(last_modified[5:-4], '%d %b %Y %H:%M:%S')
             last_modifieds.append((file, last_modified))
@@ -145,7 +147,11 @@ class Fetcher(object):
         else:
             qcf_file = recent_ghcn[1]
         print(qcf_file)
-        urllib.urlretrieve(public_dir + qcf_file, INPUT_DIR + "ghcnm.tavg.qcf.dat")
+        qcf = urllib.urlopen(url=public_dir+qcf_file, context=context)
+        f = open(INPUT_DIR+"ghcnm.tavg.qcf.dat", "w")
+        content = qcf.read().decode()
+        f.write(content)
+        f.close()
 
     def make_prefix(self):
         try:
