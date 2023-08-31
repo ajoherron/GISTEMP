@@ -27,9 +27,10 @@ def merge_ocean(ocean, sst, dates):
     meta = next(reader)
     meta.monm = 12 * (last_new_year - IYRBEG + 1)
     meta.monm4 = meta.monm + 8
-    meta.title = (meta.title[:40] +
-                  " Had: 1880-11/1981, oi2: 12/1981-%2d/%04d" %
-                  (last_new_month, last_new_year))
+    meta.title = meta.title[:40] + " Had: 1880-11/1981, oi2: 12/1981-%2d/%04d" % (
+        last_new_month,
+        last_new_year,
+    )
     yield meta
 
     # Average into Sergej's subbox grid

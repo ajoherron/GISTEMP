@@ -128,7 +128,7 @@ class StationMetaData(object):
         self.__dict__ = k
 
     def __repr__(self):
-        return 'StationMetadata(%r)' % self.__dict__
+        return "StationMetadata(%r)" % self.__dict__
 
 
 # TODO: Needs some review. Among things to think about:
@@ -212,34 +212,33 @@ class Series(object):
         self._good_count = None
         self.ann_anoms = []
         series = None
-        if 'first_year' in k:
-            first_year = k['first_year']
+        if "first_year" in k:
+            first_year = k["first_year"]
             if first_year:
                 self._first_month = first_year * 12 + 1
-            del k['first_year']
-        if 'series' in k:
-            series = k['series']
-            del k['series']
+            del k["first_year"]
+        if "series" in k:
+            series = k["series"]
+            del k["series"]
             self.set_series(BASE_YEAR * 12 + 1, series)
         self.__dict__.update(k)
 
-        if hasattr(self, 'uid'):
+        if hasattr(self, "uid"):
             # Generally applies to station records
             self.source = "UNKNOWN"
 
-        elif hasattr(self, 'box'):
+        elif hasattr(self, "box"):
             # Generally applies to subbox series.
             opt = {}
-            if hasattr(self, 'celltype'):
-                opt['celltype'] = self.celltype
+            if hasattr(self, "celltype"):
+                opt["celltype"] = self.celltype
             self.uid = boxuid(self.box, **opt)
 
     def __repr__(self):
         # A bit ugly, because it tries to do something sensible for both
         # station records and subbox series.
-        if hasattr(self, 'box'):
-            return ('Series(box=(%+06.2f,%+06.2f,%+07.2f,%+07.2f))' %
-                    tuple(self.box))
+        if hasattr(self, "box"):
+            return "Series(box=(%+06.2f,%+06.2f,%+07.2f,%+07.2f))" % tuple(self.box)
         else:
             # Assume it is a station record with a uid.
             return "Series(uid=%r)" % self.uid
@@ -313,14 +312,16 @@ class Series(object):
         where Y is the year and M is the month (from 1 to 12), thus the
         integer key when printed as a decimal has the ISO 8601 form:
         YYYYMM.
-        
+
         The result may or may not be shared with internals of this
         object."""
 
         first_index = self.first_year * 100 + 1
-        return dict((first_index + (i // 12 * 100 + i % 12), v)
-                    for i, v in enumerate(self._series)
-                    if v != MISSING)
+        return dict(
+            (first_index + (i // 12 * 100 + i % 12), v)
+            for i, v in enumerate(self._series)
+            if v != MISSING
+        )
 
     def first_valid_year(self):
         """The first calendar year with any valid data."""
@@ -346,8 +347,7 @@ class Series(object):
         """The last month with any valid data.  Returned as a 1-based
         index (where January of year 0 is 1).
         """
-        index = (i for i, x in reversed(list(enumerate(self.series)))
-                 if x != MISSING)
+        index = (i for i, x in reversed(list(enumerate(self.series))) if x != MISSING)
         try:
             last = next(index)
         except StopIteration:
@@ -391,8 +391,7 @@ class Series(object):
     def get_a_year(self, year):
         """Get the time series data for a year."""
         start_month = year * 12 + 1
-        return [self._get_a_month(m)
-                for m in range(start_month, start_month + 12)]
+        return [self._get_a_month(m) for m in range(start_month, start_month + 12)]
 
     def get_set_of_years(self, first_year, last_year):
         """Get a set of year records.
@@ -496,8 +495,9 @@ class SubboxMetaData(object):
        TBD
     """
 
-    def __init__(self, mo1, kq, mavg, monm, monm4, yrbeg,
-                 missing_flag, precipitation_flag, title):
+    def __init__(
+        self, mo1, kq, mavg, monm, monm4, yrbeg, missing_flag, precipitation_flag, title
+    ):
         self.mo1 = mo1
         self.kq = kq
         self.mavg = mavg
@@ -509,10 +509,10 @@ class SubboxMetaData(object):
         self.title = title
 
     def __repr__(self):
-        return 'SubboxMetadata(%r)' % self.__dict__
+        return "SubboxMetadata(%r)" % self.__dict__
 
 
-def boxuid(box, celltype='QXQ'):
+def boxuid(box, celltype="QXQ"):
     """Synthesize a uid attribute based on the box's centre.  *box* is a
     4-tuple of the boxes bounds: (south, north, west, east).
 

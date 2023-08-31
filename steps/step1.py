@@ -35,8 +35,8 @@ def drop_strange(data):
         series = record.series
         begin = record.first_year
         end = begin + (len(series) // 12) - 1
-        for (kind, year, x) in changes:
-            if kind == 'years':
+        for kind, year, x in changes:
+            if kind == "years":
                 # omit all the data from year1 to year2, inclusive
                 year1 = year
                 year2 = x
@@ -57,7 +57,9 @@ def drop_strange(data):
                     continue
                 # Invalidate the data.
                 nmonths = (year2 + 1 - year1) * 12
-                series[(year1 - begin) * 12:(year2 + 1 - begin) * 12] = [MISSING] * nmonths
+                series[(year1 - begin) * 12 : (year2 + 1 - begin) * 12] = [
+                    MISSING
+                ] * nmonths
 
             else:  # remove a single month
                 # It can happen that the datum-to-be-removed is outside

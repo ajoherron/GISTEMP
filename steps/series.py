@@ -41,8 +41,7 @@ def combine(composite, weight, new, new_weight, min_overlap):
         sum = 0.0  # Sum of data in composite
         # Number of years where both new and composite are valid.
         count = 0
-        for a, n in zip(composite[m::12],
-                        new[m::12]):
+        for a, n in zip(composite[m::12], new[m::12]):
             if invalid(a) or invalid(n):
                 continue
             count += 1
@@ -57,8 +56,9 @@ def combine(composite, weight, new, new_weight, min_overlap):
             if invalid(new[i]):
                 continue
             new_month_weight = weight[i] + new_weight[i]
-            composite[i] = (weight[i] * composite[i]
-                            + new_weight[i] * (new[i] + bias)) / new_month_weight
+            composite[i] = (
+                weight[i] * composite[i] + new_weight[i] * (new[i] + bias)
+            ) / new_month_weight
             weight[i] = new_month_weight
             data_combined[m] += 1
     return data_combined
@@ -125,7 +125,7 @@ def monthly_anomalies(data, reference_period=None, base_year=-9999):
     *last) and the mean for a month is taken over the period (an example
     would be reference_period=(1951,1980)).  *base_year* specifies the
     first year of the data.
-    
+
     The input data is a flat sequence, one datum per month.
     Effectively the data changes shape as it passes through this
     function.
@@ -150,6 +150,7 @@ def monthly_anomalies(data, reference_period=None, base_year=-9999):
             mean = valid_mean(row)
         monthly_mean.append(mean)
         if valid(mean):
+
             def asanom(datum):
                 """Convert a single datum to anomaly."""
                 if valid(datum):
@@ -178,13 +179,14 @@ def monthly_annual(data):
     seasonal_mean = []
     seasonal_anom = []
     # Compute seasonal anomalies; each season consists of 3 months.
-    for months in [[11, 0, 1],
-                   [2, 3, 4],
-                   [5, 6, 7],
-                   [8, 9, 10], ]:
+    for months in [
+        [11, 0, 1],
+        [2, 3, 4],
+        [5, 6, 7],
+        [8, 9, 10],
+    ]:
         # Need at least two valid months for a valid season.
-        seasonal_mean.append(valid_mean((monthly_mean[m] for m in months),
-                                        min=2))
+        seasonal_mean.append(valid_mean((monthly_mean[m] for m in months), min=2))
         # A list of 3 data series, each being an extract for a
         # particular month.
         month_in_season = []
@@ -199,8 +201,7 @@ def monthly_annual(data):
             month_in_season.append(row)
         seasonal_anom_row = []
         for n in range(years):
-            m = valid_mean((data[n] for data in month_in_season),
-                           min=2)
+            m = valid_mean((data[n] for data in month_in_season), min=2)
             seasonal_anom_row.append(m)
         seasonal_anom.append(seasonal_anom_row)
 
@@ -210,6 +211,5 @@ def monthly_annual(data):
     annual_mean = valid_mean(seasonal_mean, min=3)
     annual_anom = []
     for n in range(years):
-        annual_anom.append(valid_mean((data[n] for data in seasonal_anom),
-                                      min=3))
+        annual_anom.append(valid_mean((data[n] for data in seasonal_anom), min=3))
     return annual_mean, annual_anom

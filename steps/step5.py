@@ -21,7 +21,7 @@ from tool import gio
 
 import os
 
-log = open(os.path.join(LOG_DIR, 'step5.log'), 'w')
+log = open(os.path.join(LOG_DIR, "step5.log"), "w")
 
 
 def as_boxes(data):
@@ -51,15 +51,24 @@ def land_ocean_boxes(meta, cells):
     begin_year = str(1880)
     end_year = ocean_meta.title.decode().strip()[-4:]
 
-    land_file = open(RESULT_DIR + "GHCNv4BoxesLand." + str(int(land_meta.gridding_radius)) + ".txt", 'w')
+    land_file = open(
+        RESULT_DIR + "GHCNv4BoxesLand." + str(int(land_meta.gridding_radius)) + ".txt",
+        "w",
+    )
     print("GHCNv3 Temperature Anomalies (C) Land Only", file=land_file)
-    print(begin_year + " " + end_year + ' 9999.0 ' + str(
-        int(land_meta.gridding_radius)) + ' (=first year, last year, missing data flag, smoothing radius)',
-          file=land_file)
+    print(
+        begin_year
+        + " "
+        + end_year
+        + " 9999.0 "
+        + str(int(land_meta.gridding_radius))
+        + " (=first year, last year, missing data flag, smoothing radius)",
+        file=land_file,
+    )
 
     assert land_meta.mavg == 6
-    land_meta.mode = 'land'
-    ocean_meta.mode = 'ocean'
+    land_meta.mode = "land"
+    ocean_meta.mode = "ocean"
 
     # List of cells for each series.
     land = []
@@ -88,7 +97,7 @@ def land_ocean_boxes(meta, cells):
             maxocean = max(maxocean, oceancell.last_valid_month())
         mixed.append(mixedcell)
 
-        if landcell != '':
+        if landcell != "":
             print(*landcell.box + [landcell.d], file=land_file)
             for entry in landcell.get_set_of_years(1880, int(end_year)):
                 entry = [round(x, 5) for x in entry]
@@ -99,7 +108,7 @@ def land_ocean_boxes(meta, cells):
         warn_land_ocean(minland, maxland, minocean, maxocean)
 
     def iterland():
-        return land_meta, subbox_to_box(land_meta, land, celltype='LND')
+        return land_meta, subbox_to_box(land_meta, land, celltype="LND")
 
     def itermixed():
         first_year = min(land_meta.yrbeg, ocean_meta.yrbeg)
@@ -113,20 +122,22 @@ def land_ocean_boxes(meta, cells):
         mixed_meta = giss_data.StationMetaData(
             land_month_range=(minland, maxland),
             ocean_month_range=(minocean, maxocean),
-            **land_meta.__dict__)
+            **land_meta.__dict__
+        )
 
         mixed_meta.yrbeg = first_year
         mixed_meta.monm = max_months
-        mixed_meta.mode = 'mixed'
+        mixed_meta.mode = "mixed"
         mixed_meta.ocean_source = ocean_meta.ocean_source
         year_min = (min(minocean, minland) - 1) // 12
         year_max = (max(maxocean, maxland) - 1) // 12
         mixed_meta.title = (
-            'Combined Land--Ocean Temperature Anomaly (C) CR %4dkm %s to %s.' %
-            (land_meta.gridding_radius, str(year_min), str(year_max)))
+            "Combined Land--Ocean Temperature Anomaly (C) CR %4dkm %s to %s."
+            % (land_meta.gridding_radius, str(year_min), str(year_max))
+        )
         land_meta.months_data = max(maxland, maxocean)
         mixed_meta.months_data = max(maxland, maxocean)
-        return mixed_meta, subbox_to_box(mixed_meta, mixed, celltype='MIX')
+        return mixed_meta, subbox_to_box(mixed_meta, mixed, celltype="MIX")
 
     return iterland(), itermixed()
 
@@ -141,12 +152,14 @@ def warn_land_ocean(*l):
         m += 1
         return "%04d-%02d" % (y, m)
 
-    print("WARNING: Bad mix of land and ocean data.\n"
-          "  Land range from %s to %s; Ocean range from %s to %s." %
-          tuple(map(iso8601, l)))
+    print(
+        "WARNING: Bad mix of land and ocean data.\n"
+        "  Land range from %s to %s; Ocean range from %s to %s."
+        % tuple(map(iso8601, l))
+    )
 
 
-def subbox_to_box(meta, cells, celltype='BOX'):
+def subbox_to_box(meta, cells, celltype="BOX"):
     """Aggregate the subboxes (aka cells, typically 8000 per globe)
     into boxes (typically 80 boxes per globe), and combine records to
     produce one time series per box.
@@ -186,14 +199,15 @@ def subbox_to_box(meta, cells, celltype='BOX'):
 
         result = [MISSING] * meta.monm
         offset = 12 * (s.first_year - meta.yrbeg)
-        result[offset:offset + len(s)] = s.series
+        result[offset : offset + len(s)] = s.series
         return result
 
     # For each box, sort and combine the contributing cells, and output
     # the result (by yielding it).
     for idx, box in enumerate(boxes):
-
-        contributors = sorted(contributordict[box], key=lambda x: x.good_count, reverse=True)
+        contributors = sorted(
+            contributordict[box], key=lambda x: x.good_count, reverse=True
+        )
 
         best = contributors[0]
         box_series = padded_series(best)
@@ -201,7 +215,7 @@ def subbox_to_box(meta, cells, celltype='BOX'):
 
         # Start the *contributed* list with this cell.
         l = [any(valid(v) for v in box_series[i::12]) for i in range(12)]
-        s = ''.join('01'[x] for x in l)
+        s = "".join("01"[x] for x in l)
         contributed = [[best.uid, 1.0, s]]
         # Loop over the remaining contributors.
         for cell in contributors[1:]:
@@ -209,16 +223,20 @@ def subbox_to_box(meta, cells, celltype='BOX'):
                 addend_series = padded_series(cell)
 
                 weight = 1.0
-                station_months = series.combine(box_series, box_weight,
-                                                addend_series, weight, parameters.box_min_overlap)
-                s = ''.join('01'[bool(x)] for x in station_months)
+                station_months = series.combine(
+                    box_series,
+                    box_weight,
+                    addend_series,
+                    weight,
+                    parameters.box_min_overlap,
+                )
+                s = "".join("01"[bool(x)] for x in station_months)
             else:
                 weight = 0.0
-                s = '0' * 12
+                s = "0" * 12
             contributed.append([cell.uid, weight, s])
         box_first_year = meta.yrbeg
-        series.anomalize(box_series, parameters.subbox_reference_period,
-                         box_first_year)
+        series.anomalize(box_series, parameters.subbox_reference_period, box_first_year)
         uid = giss_data.boxuid(box, celltype=celltype)
         log.write("%s cells %s\n" % (uid, asjson(contributed)))
         ngood = sum(valid(a) for a in box_series)
@@ -293,7 +311,7 @@ def zonav(meta, boxed_data):
         for box in range(boxes_in_band[band]):
             # The last element in the tuple is the boundaries of the
             # box.  We ignore it.
-            box_series[box], box_weights[box], box_length[box], _ = (next(boxed_data))
+            box_series[box], box_weights[box], box_length[box], _ = next(boxed_data)
 
         # total number of valid data in band's boxes
         total_length = sum(box_length)
@@ -320,9 +338,13 @@ def zonav(meta, boxed_data):
                     # stop combining boxes.
                     break
 
-                series.combine(avg[band], wt[band],
-                               box_series[nr], box_weights[nr],
-                               parameters.box_min_overlap)
+                series.combine(
+                    avg[band],
+                    wt[band],
+                    box_series[nr],
+                    box_weights[nr],
+                    parameters.box_min_overlap,
+                )
         series.anomalize(avg[band], parameters.box_reference_period, iyrbeg)
         lenz[band] = sum(valid(a) for a in avg[band])
 
@@ -348,10 +370,10 @@ def zonav(meta, boxed_data):
                 break
         else:
             # Should be an assertion really.
-            raise Exception('No band in compound zone %d.' % zone)
+            raise Exception("No band in compound zone %d." % zone)
         band = iord[j1]
         if lenz[band] == 0:
-            print('**** NO DATA FOR ZONE %d' % band)
+            print("**** NO DATA FOR ZONE %d" % band)
         wtg = list(wt[band])
         avgg = list(avg[band])
         # Add in the remaining bands, in length order.
@@ -359,8 +381,7 @@ def zonav(meta, boxed_data):
             band = iord[j]
             if band not in band_in_zone[zone]:
                 continue
-            series.combine(avgg, wtg, avg[band], wt[band],
-                           parameters.box_min_overlap)
+            series.combine(avgg, wtg, avg[band], wt[band], parameters.box_min_overlap)
         series.anomalize(avgg, parameters.box_reference_period, iyrbeg)
         yield (avgg, wtg)
 
@@ -412,7 +433,7 @@ def zones():
 
 def annzon(meta, zoned_averages, alternate=None):
     if alternate is None:
-        alternate = {'global': 2, 'hemi': True}
+        alternate = {"global": 2, "hemi": True}
     """Compute annual zoned anomalies. *zoned_averages* is an iterator
     of zoned averages produced by `zonav`.
 
@@ -450,7 +471,7 @@ def annzon(meta, zoned_averages, alternate=None):
     # Find (compute) the annual means.
     for zone in range(zones):
         for iy in range(iyrs):
-            anniy = 0.
+            anniy = 0.0
             mon = 0
             for m in range(12):
                 if data[zone][iy][m] == MISSING:
@@ -462,8 +483,8 @@ def annzon(meta, zoned_averages, alternate=None):
                 ann[zone][iy] = float(anniy) / mon
 
     # Alternate global mean.
-    if alternate['global']:
-        glb = alternate['global']
+    if alternate["global"]:
+        glb = alternate["global"]
         assert glb in (1, 2)
         # Pick which "four" zones to use.
         # (subtracting 1 from each zone to convert to Python convention)
@@ -471,9 +492,9 @@ def annzon(meta, zoned_averages, alternate=None):
             zone = [8, 9, 9, 10]
         else:
             zone = [8, 3, 4, 10]
-        wtsp = [3., 2., 2., 3.]
+        wtsp = [3.0, 2.0, 2.0, 3.0]
         for iy in range(iyrs):
-            glob = 0.
+            glob = 0.0
             ann[-1][iy] = MISSING
             for z, w in zip(zone, wtsp):
                 if ann[z][iy] == MISSING:
@@ -481,20 +502,20 @@ def annzon(meta, zoned_averages, alternate=None):
                     break
                 glob += ann[z][iy] * w
             else:
-                ann[-1][iy] = .1 * glob
+                ann[-1][iy] = 0.1 * glob
         for iy in range(iyrs):
             data[-1][iy] = [MISSING] * 12
             for m in range(12):
-                glob = 0.
+                glob = 0.0
                 for z, w in zip(zone, wtsp):
                     if data[z][iy][m] == MISSING:
                         break
                     glob += data[z][iy][m] * w
                 else:
-                    data[-1][iy][m] = .1 * glob
+                    data[-1][iy][m] = 0.1 * glob
 
     # Alternate hemispheric means.
-    if alternate['hemi']:
+    if alternate["hemi"]:
         # For the computations it will be useful to recall how the zones
         # are numbered.  There is a useful docstring at the beginning of
         # zonav().
@@ -502,12 +523,20 @@ def annzon(meta, zoned_averages, alternate=None):
             for iy in range(iyrs):
                 ann[ihem + 11][iy] = MISSING
                 if ann[ihem + 3][iy] != MISSING and ann[2 * ihem + 8][iy] != MISSING:
-                    ann[ihem + 11][iy] = (0.4 * ann[ihem + 3][iy] + 0.6 * ann[2 * ihem + 8][iy])
+                    ann[ihem + 11][iy] = (
+                        0.4 * ann[ihem + 3][iy] + 0.6 * ann[2 * ihem + 8][iy]
+                    )
             for iy in range(iyrs):
                 data[ihem + 11][iy] = [MISSING] * 12
                 for m in range(12):
-                    if data[ihem + 3][iy][m] != MISSING and data[2 * ihem + 8][iy][m] != MISSING:
-                        data[ihem + 11][iy][m] = (0.4 * data[ihem + 3][iy][m] + 0.6 * data[2 * ihem + 8][iy][m])
+                    if (
+                        data[ihem + 3][iy][m] != MISSING
+                        and data[2 * ihem + 8][iy][m] != MISSING
+                    ):
+                        data[ihem + 11][iy][m] = (
+                            0.4 * data[ihem + 3][iy][m]
+                            + 0.6 * data[2 * ihem + 8][iy][m]
+                        )
 
     return meta, data, wt, ann, parameters.zone_annual_min_months
 
@@ -530,10 +559,13 @@ def ensure_weight(data):
             yield t
     else:
         meta = list(meta)
-        meta[0] = 'mask computed in Step 5'
+        meta[0] = "mask computed in Step 5"
         yield tuple(meta)
         for _, land, ocean in data:
-            if ocean.good_count < parameters.subbox_min_valid or land.d < parameters.subbox_land_range:
+            if (
+                ocean.good_count < parameters.subbox_min_valid
+                or land.d < parameters.subbox_land_range
+            ):
                 landmask = 1.0
             else:
                 landmask = 0.0
@@ -541,7 +573,6 @@ def ensure_weight(data):
 
 
 def step5(data):
-
     """Step 5 of GISTEMP.
 
     This step takes input provided by steps 3 and 4 (zipped together).

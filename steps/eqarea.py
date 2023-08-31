@@ -100,7 +100,7 @@ def southern40():
     i = 0
     band = []
     for w in band_boxes:
-        band.append(n[i:i + w])
+        band.append(n[i : i + w])
         i += w
     # Then reverse the band list
     band.reverse()
@@ -304,8 +304,9 @@ def main():
     # http://www.python.org/doc/2.3.5/lib/module-doctest.html
     import doctest
     import eqarea
+
     return doctest.testmod(eqarea)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
