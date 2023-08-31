@@ -101,7 +101,7 @@ def open_or_uncompress(filename):
         try:
             import gzip
 
-            return gzip.open(filename + '.gz')
+            return gzip.open(filename + ".gz")
         except IOError:
             pass
         raise (exception[0], exception[1], exception[2])
@@ -110,12 +110,12 @@ def open_or_uncompress(filename):
 class SubboxWriter(object):
     """Produces a GISTEMP SBBX (subbox); typically the output of
     step3 (and 4), and the input to step 5.
-     
+
      This is a .npz file containing numpy arrays.
     """
 
     def __init__(self, file):
-        self.file = open(file + '.npz', 'wb')
+        self.file = open(file + ".npz", "wb")
         self.meta = None
         self.buf_record = None
         self.result = []
@@ -129,17 +129,49 @@ class SubboxWriter(object):
         box = [int(round(x * 100)) for x in box]
         if record.station_months == 0:
             # Write as trimmed record.
-            rec = [1, box[0], box[1], box[2], box[3], record.stations, record.station_months, record.d]
+            rec = [
+                1,
+                box[0],
+                box[1],
+                box[2],
+                box[3],
+                record.stations,
+                record.station_months,
+                record.d,
+            ]
         else:
-            rec = [len(record), box[0], box[1], box[2], box[3], record.stations, record.station_months, record.d]
+            rec = [
+                len(record),
+                box[0],
+                box[1],
+                box[2],
+                box[3],
+                record.stations,
+                record.station_months,
+                record.d,
+            ]
         series = np.asarray(record.series)
         return [rec, series]
 
     def write(self, record):
         if self.meta is None:
-            assert hasattr(record, "precipitation_flag"), "First record must be SubboxMetaData"
-            rec = np.array([record.mo1, record.kq, record.mavg, record.monm, record.monm4, record.yrbeg,
-                            record.missing_flag, record.precipitation_flag, record.title], dtype=object)
+            assert hasattr(
+                record, "precipitation_flag"
+            ), "First record must be SubboxMetaData"
+            rec = np.array(
+                [
+                    record.mo1,
+                    record.kq,
+                    record.mavg,
+                    record.monm,
+                    record.monm4,
+                    record.yrbeg,
+                    record.missing_flag,
+                    record.precipitation_flag,
+                    record.title,
+                ],
+                dtype=object,
+            )
             self.meta = rec
         else:
             self.result.append(self._flush(record))
@@ -154,27 +186,45 @@ class SubboxReader(object):
     file.
     """
 
-    def __init__(self, rawfile, bos='>', celltype=None):
+    def __init__(self, rawfile, bos=">", celltype=None):
         self.bos = bos
         self.f = fort.File(rawfile, bos=self.bos)
         rec = self.f.readline()
-        (self.mo1, kq, mavg, monm, monm4, yrbeg, missing_flag,
-         precipitation_flag, title) = struct.unpack(self.bos + '8i80s', rec)
+        (
+            self.mo1,
+            kq,
+            mavg,
+            monm,
+            monm4,
+            yrbeg,
+            missing_flag,
+            precipitation_flag,
+            title,
+        ) = struct.unpack(self.bos + "8i80s", rec)
 
-        self.meta = giss_data.SubboxMetaData(self.mo1, kq, mavg, monm,
-                                             monm4, yrbeg, missing_flag, precipitation_flag, title)
+        self.meta = giss_data.SubboxMetaData(
+            self.mo1,
+            kq,
+            mavg,
+            monm,
+            monm4,
+            yrbeg,
+            missing_flag,
+            precipitation_flag,
+            title,
+        )
 
         assert self.meta.mavg == 6, "Only monthly averages supported"
 
         if celltype is None:
             if "sea" in title.lower().split():
-                celltype = 'P'
+                celltype = "P"
             else:
-                celltype = 'C'
+                celltype = "C"
         self.celltype = celltype
 
         # Synthesize a gridding radius by parsing it out of the title.
-        radiusre = r'CR (\d+) *KM'
+        radiusre = r"CR (\d+) *KM"
         m = re.search(radiusre, title.decode("utf-8"))
         if m:
             radius = int(m.group(1))
@@ -185,8 +235,16 @@ class SubboxReader(object):
         record in the binary file.
         """
         m = self.meta
-        return [self.mo1, m.kq, m.mavg, m.monm,
-                m.monm4, m.yrbeg, m.missing_flag, m.precipitation_flag]
+        return [
+            self.mo1,
+            m.kq,
+            m.mavg,
+            m.monm,
+            m.monm4,
+            m.yrbeg,
+            m.missing_flag,
+            m.precipitation_flag,
+        ]
 
     def __iter__(self):
         yield self.meta
@@ -203,13 +261,22 @@ class SubboxReader(object):
             # them to fractional degrees first:
             for i in range(1, 5):
                 fields[i] /= 100.0
-            attr = dict(zip(
-                ['lat_S', 'lat_N', 'lon_W', 'lon_E',
-                 'stations', 'station_months', 'd'],
-                fields[1:8]))
-            attr['box'] = fields[1:5]
-            subbox = giss_data.Series(series=series,
-                                      celltype=self.celltype, **attr)
+            attr = dict(
+                zip(
+                    [
+                        "lat_S",
+                        "lat_N",
+                        "lon_W",
+                        "lon_E",
+                        "stations",
+                        "station_months",
+                        "d",
+                    ],
+                    fields[1:8],
+                )
+            )
+            attr["box"] = fields[1:5]
+            subbox = giss_data.Series(series=series, celltype=self.celltype, **attr)
             rec = self.f.readline()
             yield subbox
 
@@ -221,30 +288,31 @@ class SubboxReaderNpz(object):
     """Reads GISS subbox files (SBBX).  These files are output by Step
     3, and consumed by Step 5.  Step 4 both reads and writes a subbox
     file.
-    
+
     Reads a .npz file consisting of numpy arrays.
     """
 
     def __init__(self, file, celltype=None):
-        self.f = np.load(file + '.npz')
-        meta = self.f['meta']
+        self.f = np.load(file + ".npz")
+        meta = self.f["meta"]
         title = meta[-1]
         self.meta = giss_data.SubboxMetaData(*meta)
-        self.f.files.remove('meta')
-        self.f.files = sorted(self.f.files, key=lambda t: int(t.split('_')[1]))
+        self.f.files.remove("meta")
+        self.f.files = sorted(self.f.files, key=lambda t: int(t.split("_")[1]))
         assert self.meta.mavg == 6, "Only monthly averages supported"
         if type(title) is bytes:
             title = title.decode()
 
         if celltype is None:
             if "sea" in title.lower().split():
-                celltype = 'P'
+                celltype = "P"
             else:
-                celltype = 'C'
+                celltype = "C"
         self.celltype = celltype
         # Synthesize a gridding radius by parsing it out of the title.
 
         import parameters
+
         radius = getattr(parameters, "gridding_radius")
         self.meta.gridding_radius = radius
 
@@ -253,8 +321,16 @@ class SubboxReaderNpz(object):
         record in the binary file.
         """
         m = self.meta
-        return [self.mo1, m.kq, m.mavg, m.monm,
-                m.monm4, m.yrbeg, m.missing_flag, m.precipitation_flag]
+        return [
+            self.mo1,
+            m.kq,
+            m.mavg,
+            m.monm,
+            m.monm4,
+            m.yrbeg,
+            m.missing_flag,
+            m.precipitation_flag,
+        ]
 
     def __iter__(self):
         yield self.meta
@@ -267,8 +343,21 @@ class SubboxReaderNpz(object):
             # them to fractional degrees first:
             for i in range(1, 5):
                 fields[i] /= 100.0
-            attr = dict(zip(['lat_S', 'lat_N', 'lon_W', 'lon_E', 'stations', 'station_months', 'd'], fields[1:8]))
-            attr['box'] = fields[1:5]
+            attr = dict(
+                zip(
+                    [
+                        "lat_S",
+                        "lat_N",
+                        "lon_W",
+                        "lon_E",
+                        "stations",
+                        "station_months",
+                        "d",
+                    ],
+                    fields[1:8],
+                )
+            )
+            attr["box"] = fields[1:5]
             subbox = giss_data.Series(series=series, celltype=self.celltype, **attr)
             yield subbox
 
@@ -276,8 +365,9 @@ class SubboxReaderNpz(object):
         return getattr(self.meta, name)
 
 
-def GHCNV4Reader(path=None, file=None, meta=None,
-                 year_min=None, scale=None, element=None):
+def GHCNV4Reader(
+    path=None, file=None, meta=None, year_min=None, scale=None, element=None
+):
     """Reads a file in GHCN V4 .dat format and yields each station
     record (as a giss_data.Series instance).  For now, this treats
     all the data for a station as a single record (contrast with GHCN V2
@@ -335,15 +425,19 @@ def GHCNV4Reader(path=None, file=None, meta=None,
         noted_element[element] = True
 
         if len(noted_element) > 1:
-            raise Exception("File contains more than one sort of element: %r" % noted_element.keys())
+            raise Exception(
+                "File contains more than one sort of element: %r" % noted_element.keys()
+            )
 
-        friendly = dict(TAVG='average temperature',
-                        TMIN='mean minimum temperature',
-                        TMAX='mean maximum temperature')
+        friendly = dict(
+            TAVG="average temperature",
+            TMIN="mean minimum temperature",
+            TMAX="mean maximum temperature",
+        )
         print("(Reading %s)" % friendly[element])
 
     element_scale = dict(TAVG=0.01, TMIN=0.01, TMAX=0.01)
-    reject = 'DKOSTW'
+    reject = "DKOSTW"
 
     def convert(s):
         """Convert single value. *s* is the 8 character string: 5
@@ -367,7 +461,7 @@ def GHCNV4Reader(path=None, file=None, meta=None,
     for id, lines in itertools.groupby(inp, id11):
         key = dict(uid=id, first_year=year_min)
         if meta and meta.get(id):
-            key['station'] = meta[id]
+            key["station"] = meta[id]
         record = giss_data.Series(**key)
         for line in lines:
             year = int(line[11:15])
@@ -379,7 +473,7 @@ def GHCNV4Reader(path=None, file=None, meta=None,
                 multiplier = scale
             else:
                 multiplier = element_scale[found_element]
-            values = [convert(line[i:i + 8]) for i in range(19, 115, 8)]
+            values = [convert(line[i : i + 8]) for i in range(19, 115, 8)]
             if values != all_missing:
                 record.add_year(year, values)
         if len(record) != 0:
@@ -412,11 +506,10 @@ class GHCNV3Writer(object):
         for year in range(record.first_year, record.last_year + 1):
             if not record.has_data_for_year(year):
                 continue
-            element = getattr(record, 'element', 'TAVG')
+            element = getattr(record, "element", "TAVG")
             self.writeyear(record.uid, element, year, record.get_a_year(year))
 
     def writeyear(self, uid, element, year, temps):
-
         """Write a single year's worth of data out.  *temps* should
         contain 12 monthly values."""
 
@@ -428,30 +521,37 @@ class GHCNV3Writer(object):
             sflag = uid[11]
         elif len(uid) == 6:
             # Assume it's a 6 digit identifier from USHCN.
-            uid = '42500' + uid
-            sflag = 'U'
+            uid = "42500" + uid
+            sflag = "U"
         else:
-            sflag = ' '
+            sflag = " "
         id11 = "%-11.11s" % uid
         assert len(element) == 4
 
-        tstrings = [self.to_text(t)
-                    for t in internal_to_external(temps, scale=self.scale)]
-        flags = ['  ' + sflag] * 12
+        tstrings = [
+            self.to_text(t) for t in internal_to_external(temps, scale=self.scale)
+        ]
+        flags = ["  " + sflag] * 12
 
-        self.f.write('%s%04d%s%s\n' % (uid, year, element,
-                                       ''.join(t + flag for t, flag in zip(tstrings, flags))))
+        self.f.write(
+            "%s%04d%s%s\n"
+            % (
+                uid,
+                year,
+                element,
+                "".join(t + flag for t, flag in zip(tstrings, flags)),
+            )
+        )
 
     def close(self):
         self.f.close()
 
 
-antarc_discard_re = re.compile(r'^$|^Get |^[12A-Z]$')
-antarc_temperature_re = re.compile(r'^(.*) .* *temperature')
+antarc_discard_re = re.compile(r"^$|^Get |^[12A-Z]$")
+antarc_temperature_re = re.compile(r"^(.*) .* *temperature")
 
 
-def read_antarctic(path, station_path, discriminator,
-                   meta=None, year_min=None):
+def read_antarctic(path, station_path, discriminator, meta=None, year_min=None):
     stations = read_antarc_station_ids(station_path, discriminator)
     record = None
     for line in open(path):
@@ -460,18 +560,18 @@ def read_antarctic(path, station_path, discriminator,
         station_line = antarc_temperature_re.match(line)
         if station_line:
             station_name = station_line.group(1)
-            station_name = station_name.replace('\\', '')
+            station_name = station_name.replace("\\", "")
             id12 = stations[station_name]
             if record is not None:
                 yield record
             key = dict(uid=id12, first_year=year_min)
             id11 = id12[:11]
             if meta and meta.get(id11):
-                key['station'] = meta[id11]
+                key["station"] = meta[id11]
             record = giss_data.Series(**key)
             continue
         line = line.strip()
-        if line.find('.') >= 0 and line[0] in '12':
+        if line.find(".") >= 0 and line[0] in "12":
             year, data = read_antarc_line(line)
             if year >= giss_data.BASE_YEAR:
                 record.add_year(year, data)
@@ -479,12 +579,11 @@ def read_antarctic(path, station_path, discriminator,
         yield record
 
 
-austral_discard_re = re.compile(r'^$|:')
-austral_header_re = re.compile(r'^\s*(.+?)  .*(E$|E )')
+austral_discard_re = re.compile(r"^$|:")
+austral_header_re = re.compile(r"^\s*(.+?)  .*(E$|E )")
 
 
-def read_australia(path, station_path, discriminator,
-                   meta=None, year_min=None):
+def read_australia(path, station_path, discriminator, meta=None, year_min=None):
     stations = read_antarc_station_ids(station_path, discriminator)
     record = None
     for line in open(path):
@@ -499,11 +598,11 @@ def read_australia(path, station_path, discriminator,
             key = dict(uid=id12, first_year=year_min)
             id11 = id12[:11]
             if meta and meta.get(id11):
-                key['station'] = meta[id11]
+                key["station"] = meta[id11]
             record = giss_data.Series(**key)
             continue
         line = line.strip()
-        if line.find('.') >= 0 and line[0] in '12':
+        if line.find(".") >= 0 and line[0] in "12":
             year, data = read_antarc_line(line)
             if year >= giss_data.BASE_YEAR:
                 record.add_year(year, data)
@@ -521,18 +620,18 @@ def read_antarc_line(line):
     year = int(line[:4])
     line = line[4:]
     tuple = []
-    if line[6] == '.' or line[7] == '-':
+    if line[6] == "." or line[7] == "-":
         # Some of the datasets are 12f8.1 with missing values as '       -'.
         for i in range(0, 12):
-            tuple.append(read_float(line[i * 8:i * 8 + 8]))
+            tuple.append(read_float(line[i * 8 : i * 8 + 8]))
     else:
         # Others are xx12f7.1 or xxx12f7.1 with missing values as '       '.
-        np = line.find('.')
+        np = line.find(".")
         if np < 0:
             raise (ValueError, "Non-data line encountered: '%s'" % line)
         position = (np % 7) + 2
         for i in range(0, 12):
-            tuple.append(read_float(line[i * 7 + position:i * 7 + 7 + position]))
+            tuple.append(read_float(line[i * 7 + position : i * 7 + 7 + position]))
     return year, tuple
 
 
@@ -548,7 +647,7 @@ def read_antarc_station_ids(path, discriminator):
     return dict
 
 
-def station_metadata(path=None, file=None, format='giss_v4'):
+def station_metadata(path=None, file=None, format="giss_v4"):
     """Read station metadata from file, return it as a dictionary.
     *format* specifies the format of the metadata can be:
     'giss_v4' for GHCN v4 ;
@@ -598,7 +697,7 @@ def station_metadata(path=None, file=None, format='giss_v4'):
     """
     # Do not supply both arguments!
     assert not (file and path)
-    assert format in ('giss_v3', 'v3', 'giss_v4')
+    assert format in ("giss_v3", "v3", "giss_v4")
     if path:
         try:
             file = open(path)
@@ -612,7 +711,7 @@ def station_metadata(path=None, file=None, format='giss_v4'):
         Convert a field to int, or if it is blank, convert to None.
         """
 
-        if s == '' or s.isspace():
+        if s == "" or s.isspace():
             return None
         return int(s)
 
@@ -624,7 +723,6 @@ def station_metadata(path=None, file=None, format='giss_v4'):
     # brightness over the US, see Hansen et al 2001), global_light
     # (GISTEMP specific field for global nighttime satellite
     # brightness).
-
 
     v3fields = dict(
         uid=(0, 11, str),
@@ -644,7 +742,11 @@ def station_metadata(path=None, file=None, format='giss_v4'):
         grveg=(84, 100, str),
         popcss=(100, 101, str),
         global_light=(101, 106, blank_int),  # GISTEMP only
-        berkeley=(106, 109, str),  # GISTEMP only; comment suggests derived from Berkeley Earth.
+        berkeley=(
+            106,
+            109,
+            str,
+        ),  # GISTEMP only; comment suggests derived from Berkeley Earth.
     )
 
     # See ftp://ftp.ncdc.noaa.gov/pub/data/ghcn/v4/readme.txt for format
@@ -673,24 +775,26 @@ def station_metadata(path=None, file=None, format='giss_v4'):
         lon=(21, 30, float),
         stelev=(31, 37, float),
         name=(37, 69, str),
-        global_light=(69, 74, blank_int), # was (69, 71, blank_int)
+        global_light=(69, 74, blank_int),  # was (69, 71, blank_int)
     )
 
-    if 'giss_v3' == format:
+    if "giss_v3" == format:
         fields = v3fields
-    elif 'giss_v4' == format:
+    elif "giss_v4" == format:
         fields = v4fields
-    elif 'v3' == format:
+    elif "v3" == format:
         fields = v3_ghcn_fields
 
     result = {}
     for line in file:
-        d = dict((field, convert(line[a:b])) for field, (a, b, convert) in fields.items())
-        result[d['uid']] = giss_data.Station(**d)
+        d = dict(
+            (field, convert(line[a:b])) for field, (a, b, convert) in fields.items()
+        )
+        result[d["uid"]] = giss_data.Station(**d)
     return result
 
 
-def augmented_station_metadata(path=None, file=None, format='v3'):
+def augmented_station_metadata(path=None, file=None, format="v3"):
     """Reads station metadata just like station_metadata() but
     additionally augments records with metadata obtained from another
     file, specified by parameters.augment_metadata.
@@ -699,23 +803,23 @@ def augmented_station_metadata(path=None, file=None, format='v3'):
     augments = parameters.augment_metadata
 
     if augments:
-        path, columns = augments.split('=')
-        columns = columns.split(',')
-        assert 'uid' in columns
+        path, columns = augments.split("=")
+        columns = columns.split(",")
+        assert "uid" in columns
         for row in open(path):
-            row = row.strip().split(',')
+            row = row.strip().split(",")
             d = dict(zip(columns, row))
             # Convert things that look like numbers, to numbers.
             # (except for uid, which is always a string)
             for k, v in d.items():
-                if k == 'uid':
+                if k == "uid":
                     continue
                 try:
                     v = float(v)
                 except ValueError:
                     pass
                 d[k] = v
-            uid = d['uid']
+            uid = d["uid"]
             if uid in meta:
                 meta[uid].__dict__.update(d)
     return meta
@@ -731,20 +835,25 @@ def read_generic_v3(name):
     """
 
     filename = os.path.join(BASE_PATH + "input", name)
-    if not name.endswith('.dat'):
-        raise Exception("Don't know where to look for .inv file for GHCN-M v2 format file: %r" % name)
+    if not name.endswith(".dat"):
+        raise Exception(
+            "Don't know where to look for .inv file for GHCN-M v2 format file: %r"
+            % name
+        )
 
     if parameters.element:
         element = parameters.element
     else:
         element = None
 
-    invfile = name[:-4] + '.inv'
+    invfile = name[:-4] + ".inv"
     invfile = os.path.join(BASE_PATH + "input", invfile)
-    return GHCNV4Reader(file=open(filename),
-                        meta=augmented_station_metadata(invfile, format='v3'),
-                        year_min=giss_data.BASE_YEAR,
-                        element=element)
+    return GHCNV4Reader(
+        file=open(filename),
+        meta=augmented_station_metadata(invfile, format="v3"),
+        year_min=giss_data.BASE_YEAR,
+        element=element,
+    )
 
 
 def read_float(s):
@@ -772,15 +881,14 @@ def v3meta():
 
     global _v3meta
 
-    v3inv = os.path.join(INPUT_DIR, 'v4.inv')
+    v3inv = os.path.join(INPUT_DIR, "v4.inv")
     if not _v3meta:
-        _v3meta = augmented_station_metadata(v3inv, format='giss_v4')
+        _v3meta = augmented_station_metadata(v3inv, format="giss_v4")
     return _v3meta
 
 
 def maskboxes(inp, grid):
-    """Read a step5mask file box by box.  Yield (value, box) pair.
-    """
+    """Read a step5mask file box by box.  Yield (value, box) pair."""
     for row, box in zip(inp, grid):
         lat = float(row[:5])
         lon = float(row[5:11])
@@ -802,29 +910,47 @@ class Input:
     def open(self, source):
         """Open the source (specified as a string), and return an
         iterator."""
-        if source == 'ghcn' or re.match('ghcnm.(tavg|tmax|tmin)', source):
-            if source == 'ghcn':
-                ghcn4file = INPUT_DIR + 'ghcnm.tavg.qcf.dat'
+        if source == "ghcn" or re.match("ghcnm.(tavg|tmax|tmin)", source):
+            if source == "ghcn":
+                ghcn4file = INPUT_DIR + "ghcnm.tavg.qcf.dat"
             else:
-                if source.endswith('.dat'):
+                if source.endswith(".dat"):
                     pass
                 else:
-                    source += '.qca.dat'
+                    source += ".qca.dat"
                 ghcn4file = os.path.join(INPUT_DIR, source)
-            invfile = INPUT_DIR + 'v4.inv'
+            invfile = INPUT_DIR + "v4.inv"
 
-            return GHCNV4Reader(file=open(ghcn4file),
-                                meta=augmented_station_metadata(invfile, format='giss_v4'),
-                                year_min=giss_data.BASE_YEAR)
-        if source == 'scar':
+            return GHCNV4Reader(
+                file=open(ghcn4file),
+                meta=augmented_station_metadata(invfile, format="giss_v4"),
+                year_min=giss_data.BASE_YEAR,
+            )
+        if source == "scar":
             return itertools.chain(
-                read_antarctic(INPUT_DIR + "antarc1.txt", INPUT_DIR + "antarc1.list", '8',
-                               meta=v3meta(), year_min=giss_data.BASE_YEAR),
-                read_antarctic(INPUT_DIR + "antarc3.txt", INPUT_DIR + "antarc3.list", '9',
-                               meta=v3meta(), year_min=giss_data.BASE_YEAR),
-                read_australia(INPUT_DIR + "antarc2.txt", INPUT_DIR + "antarc2.list", '7',
-                               meta=v3meta(), year_min=giss_data.BASE_YEAR))
-        if source.endswith('.dat'):
+                read_antarctic(
+                    INPUT_DIR + "antarc1.txt",
+                    INPUT_DIR + "antarc1.list",
+                    "8",
+                    meta=v3meta(),
+                    year_min=giss_data.BASE_YEAR,
+                ),
+                read_antarctic(
+                    INPUT_DIR + "antarc3.txt",
+                    INPUT_DIR + "antarc3.list",
+                    "9",
+                    meta=v3meta(),
+                    year_min=giss_data.BASE_YEAR,
+                ),
+                read_australia(
+                    INPUT_DIR + "antarc2.txt",
+                    INPUT_DIR + "antarc2.list",
+                    "7",
+                    meta=v3meta(),
+                    year_min=giss_data.BASE_YEAR,
+                ),
+            )
+        if source.endswith(".dat"):
             return read_generic_v3(source)
         raise Exception("Cannot open source %r" % source)
 
@@ -845,7 +971,7 @@ def choose_writer():
 
     format = parameters.work_file_format
 
-    if format == 'v3' or format == 'v4':
+    if format == "v3" or format == "v4":
         writer = GHCNV3Writer
     return writer, format
 
@@ -855,14 +981,14 @@ def generic_output_step(n):
 
     def output(data):
         writer, ext = choose_writer()
-        path = os.path.join(WORK_DIR, 'step%d.%s' % (n, ext))
+        path = os.path.join(WORK_DIR, "step%d.%s" % (n, ext))
         out = writer(path=path)
         for thing in data:
             out.write(thing)
             yield thing
         print("Step %d: closing output file." % n)
         out.close()
-        progress = open(PROGRESS_DIR + 'progress.txt', 'a')
+        progress = open(PROGRESS_DIR + "progress.txt", "a")
         progress.write("\nStep %d: closing output file.\n" % n)
 
     return output
@@ -872,9 +998,9 @@ step0_output = generic_output_step(0)
 
 
 def step1_input():
-    return GHCNV4Reader(WORK_DIR + "step0.v4",
-                        meta=v3meta(),
-                        year_min=giss_data.BASE_YEAR)
+    return GHCNV4Reader(
+        WORK_DIR + "step0.v4", meta=v3meta(), year_min=giss_data.BASE_YEAR
+    )
 
 
 step1_output = generic_output_step(1)
@@ -891,13 +1017,13 @@ def step3_input():
     return GHCNV4Reader(WORK_DIR + "step2.v4", meta=v3meta())
 
 
-STEP3_OUT = os.path.join(RESULT_DIR, 'SBBX1880.Ts.GHCN.CL.PA.1200')
+STEP3_OUT = os.path.join(RESULT_DIR, "SBBX1880.Ts.GHCN.CL.PA.1200")
 
 
 def step3_output(data):
     out = SubboxWriter(STEP3_OUT)
     writer, ext = choose_writer()
-    textout = writer(path=(WORK_DIR + 'step3.%s' % ext), scale=0.01)
+    textout = writer(path=(WORK_DIR + "step3.%s" % ext), scale=0.01)
     gotmeta = False
     for thing in data:
         out.write(thing)
@@ -905,11 +1031,11 @@ def step3_output(data):
             textout.write(thing)
         gotmeta = True
         yield thing
-    #np.savez_compressed(out.file, *out.result, meta=out.meta)
+    # np.savez_compressed(out.file, *out.result, meta=out.meta)
     print("Step 3: closing output file")
     out.close()
     textout.close()
-    progress = open(PROGRESS_DIR + 'progress.txt', 'a')
+    progress = open(PROGRESS_DIR + "progress.txt", "a")
     progress.write("\nStep3: closing output file\n")
 
 
@@ -937,7 +1063,7 @@ def make_3d_array(a, b, c):
 
 def step4_find_monthlies(latest_year, latest_month):
     dates = {}
-    filename_re = re.compile('^oiv2mon\.([0-9][0-9][0-9][0-9])([0-9][0-9])(\.gz)?$')
+    filename_re = re.compile("^oiv2mon\.([0-9][0-9][0-9][0-9])([0-9][0-9])(\.gz)?$")
     for f in os.listdir(INPUT_DIR):
         m = filename_re.match(f)
         if m:
@@ -946,7 +1072,7 @@ def step4_find_monthlies(latest_year, latest_month):
             if (year, month) > (latest_year, latest_month):
                 if m.group(3):
                     f = f[:-3]
-                dates[(year, month)] = 'input/' + f
+                dates[(year, month)] = "input/" + f
     l = list(dates.items())
     l.sort()
     return l
@@ -966,7 +1092,7 @@ def step4_load_sst_monthlies(latest_year, latest_month):
     sst = make_3d_array(360, 180, 12 * n_years)
 
     dates = []
-    for (date, file) in files:
+    for date, file in files:
         dates.append(date)
         (year, month) = date
         f = open_or_uncompress(file)
@@ -979,7 +1105,7 @@ def step4_load_sst_monthlies(latest_year, latest_month):
         p = 0
         for lat in range(180):
             for long in range(360):
-                v, = struct.unpack(">f", data[p:p + 4])
+                (v,) = struct.unpack(">f", data[p : p + 4])
                 p += 4
                 sst[long][lat][month] = v
 
@@ -989,18 +1115,23 @@ def step4_load_sst_monthlies(latest_year, latest_month):
 # This is used to extract the end month/year from the title of the
 # SBBX file. This file can either be the usual ERSST file, or a
 # variety of alternatives, including the traditional HadR2 file.
-alternatives = ("(?:" +
-                "|".join([
-                    "Had: 1880-11/1981, oi2: 12/1981-",  # traditional
-                    "ERSST 1880-1981  OISSTadj 1982-",
-                    "HadISST 01/1880 -",
-                    "ERSST 01/1880 -",  # since 2013, the usual analysis
-                    "ERSSTv4 01/1880 -",  # since 08/2015, the usual analysis
-                    "ERSSTv5 01/1880 -",  # for ERSST v5
-                ]) + ")")
-rTitle = re.compile(r"Monthly Sea Surface Temperature anom \(C\) " +
-                    alternatives +
-                    " *(\d+)/(\d+)")
+alternatives = (
+    "(?:"
+    + "|".join(
+        [
+            "Had: 1880-11/1981, oi2: 12/1981-",  # traditional
+            "ERSST 1880-1981  OISSTadj 1982-",
+            "HadISST 01/1880 -",
+            "ERSST 01/1880 -",  # since 2013, the usual analysis
+            "ERSSTv4 01/1880 -",  # since 08/2015, the usual analysis
+            "ERSSTv5 01/1880 -",  # for ERSST v5
+        ]
+    )
+    + ")"
+)
+rTitle = re.compile(
+    r"Monthly Sea Surface Temperature anom \(C\) " + alternatives + " *(\d+)/(\d+)"
+)
 
 
 def find_ocean_file():
@@ -1015,8 +1146,7 @@ def find_ocean_file():
         if name.upper() == "SBBX." + source:
             return os.path.join(dir, name)
 
-    raise Exception("Can't find ocean source %r." %
-                    parameters.ocean_source)
+    raise Exception("Can't find ocean source %r." % parameters.ocean_source)
 
 
 def step4_input(land):
@@ -1025,7 +1155,7 @@ def step4_input(land):
     if land is None:
         land = SubboxReaderNpz(STEP3_OUT)
     ocean_file = find_ocean_file()
-    ocean = SubboxReader(open(ocean_file, 'rb'))
+    ocean = SubboxReader(open(ocean_file, "rb"))
     ocean.meta.ocean_source = parameters.ocean_source
 
     m = rTitle.match(ocean.meta.title.decode("utf-8"))
@@ -1049,10 +1179,10 @@ def step4_output(data):
     for land, ocean in data:
         out.write(ocean)
         yield land, ocean
-    #np.savez_compressed(out.file, *out.result, meta=out.meta)
+    # np.savez_compressed(out.file, *out.result, meta=out.meta)
     print("Step4: closing output file")
     out.close()
-    progress = open(PROGRESS_DIR + 'progress.txt', 'a')
+    progress = open(PROGRESS_DIR + "progress.txt", "a")
     progress.write("\nStep4: closing output file\n")
 
 
@@ -1060,7 +1190,7 @@ def step5_input(data):
     if not data:
         land = SubboxReaderNpz(STEP3_OUT)
         try:
-            ocean = SubboxReaderNpz(RESULT_DIR + 'SBBX.SST')
+            ocean = SubboxReaderNpz(RESULT_DIR + "SBBX.SST")
             ocean.meta.ocean_source = parameters.ocean_source
         except IOError:
             data = ensure_landocean(iter(land))
@@ -1071,7 +1201,7 @@ def step5_input(data):
 
     # Add optional mask.
     try:
-        p = os.path.join(BASE_PATH + 'input', 'step5mask')
+        p = os.path.join(BASE_PATH + "input", "step5mask")
         mask = open(p)
         print("Using mask from", p)
     except IOError:
@@ -1082,7 +1212,7 @@ def step5_input(data):
         for land, ocean in data:
             yield None, land, ocean
     else:
-        yield ('mask from %s' % mask.name,) + tuple(meta)
+        yield ("mask from %s" % mask.name,) + tuple(meta)
         for maskrow, (land, ocean) in zip(mask, data):
             maskv = float(maskrow[16:21])
             yield maskv, land, ocean
@@ -1106,13 +1236,13 @@ def ensure_landocean(data):
         land_meta = meta
         ocean_meta = copy.copy(meta)
         print("No ocean data; using land data only")
-        data = add_blank(data, 'ocean')
+        data = add_blank(data, "ocean")
 
     if land_meta is None:
         # Synthesize land data
         land_meta = copy.copy(ocean_meta)
         print("No land data; using ocean data only")
-        data = add_blank(extract_ocean(data), 'land')
+        data = add_blank(extract_ocean(data), "land")
 
     yield land_meta, ocean_meta
     for series in data:
@@ -1130,15 +1260,18 @@ def add_blank(data, required):
     the pair; or 'ocean' to synthesize the second of the pair.
     """
 
-    assert required in ('land', 'ocean')
+    assert required in ("land", "ocean")
 
     for this_box in data:
         other_series = [MISSING] * len(this_box.series)
-        other_box = giss_data.Series(series=other_series,
-                                     box=this_box.box,
-                                     stations=0, station_months=0,
-                                     d=MISSING)
-        if required == 'land':
+        other_box = giss_data.Series(
+            series=other_series,
+            box=this_box.box,
+            stations=0,
+            station_months=0,
+            d=MISSING,
+        )
+        if required == "land":
             yield other_box, this_box
         else:
             yield this_box, other_box
@@ -1150,7 +1283,7 @@ def step5_bx_output(meta, data):
     # Usually one of 'land', 'ocean', 'mixed'.
     mode = meta.mode
     result = []
-    boxf = open(os.path.join(RESULT_DIR, make_filename(meta, 'BX') + '.npz'), 'wb')
+    boxf = open(os.path.join(RESULT_DIR, make_filename(meta, "BX") + ".npz"), "wb")
     info = info_from_meta(meta)
     info.append(title)
     info = np.array(info, dtype=object)
@@ -1161,11 +1294,11 @@ def step5_bx_output(meta, data):
         result.append(rec)
         yield record
 
-    #np.savez_compressed(boxf, *result, meta=info)
+    # np.savez_compressed(boxf, *result, meta=info)
     print("Step 5: Closing box file:", boxf.name)
     boxf.close()
-    progress = open(PROGRESS_DIR + 'progress.txt', 'a')
-    progress.write("\nStep 5: Closing box file:" + boxf.name + '\n')
+    progress = open(PROGRESS_DIR + "progress.txt", "a")
+    progress.write("\nStep 5: Closing box file:" + boxf.name + "\n")
 
 
 def make_filename(meta, kind):
@@ -1176,18 +1309,16 @@ def make_filename(meta, kind):
       result/mixedBX.Ts.ERSST.GHCN.CL.PA.1200
     """
 
-    if hasattr(meta, 'gridding_radius'):
+    if hasattr(meta, "gridding_radius"):
         radius = ".%.0f" % meta.gridding_radius
     else:
         # No gridding radius specified in *meta*; typically, an ocean
         # file.
-        radius = ''
+        radius = ""
 
     mode = meta.mode
 
-    return (
-        meta.mode + kind + '.Ts' + name_sources(meta, mode) +
-        '.CL.PA' + radius)
+    return meta.mode + kind + ".Ts" + name_sources(meta, mode) + ".CL.PA" + radius
 
 
 def name_sources(meta, mode):
@@ -1196,19 +1327,19 @@ def name_sources(meta, mode):
     that names the sources used.
     """
 
-    land_source = ''
-    ocean_source = ''
+    land_source = ""
+    ocean_source = ""
 
-    if mode in ('land', 'mixed'):
-        land_source = '.GHCN'
-    if mode in ('ocean', 'mixed'):
-        ocean_source = '.' + meta.ocean_source.upper()
+    if mode in ("land", "mixed"):
+        land_source = ".GHCN"
+    if mode in ("ocean", "mixed"):
+        ocean_source = "." + meta.ocean_source.upper()
 
     return ocean_source + land_source
 
 
 def make_text_filename(meta, mode, part):
-    return mode + part + '.Ts' + name_sources(meta, mode) + '.CL.PA.txt'
+    return mode + part + ".Ts" + name_sources(meta, mode) + ".CL.PA.txt"
 
 
 def info_from_meta(meta):
@@ -1217,9 +1348,16 @@ def info_from_meta(meta):
     various GISS specific Fortran binary files.
     """
 
-    return [meta.mo1, meta.kq, meta.mavg, meta.monm,
-            2 * meta.monm + 5, meta.yrbeg, meta.missing_flag,
-            meta.precipitation_flag]
+    return [
+        meta.mo1,
+        meta.kq,
+        meta.mavg,
+        meta.monm,
+        2 * meta.monm + 5,
+        meta.yrbeg,
+        meta.missing_flag,
+        meta.precipitation_flag,
+    ]
 
 
 def step5_mask_output(data):
@@ -1227,7 +1365,7 @@ def step5_mask_output(data):
     # metadata
     yield next(data)
 
-    out = open(os.path.join(WORK_DIR, 'step5mask'), 'w')
+    out = open(os.path.join(WORK_DIR, "step5mask"), "w")
 
     for datum in data:
         mask, land, ocean = datum
@@ -1253,31 +1391,35 @@ def step5_zone_titles():
     """Return the titles used for the 16 zones."""
 
     # Boundaries (degrees latitude, +ve North) of the 8 basic belts.
-    band = ['90.0 N',
-            '64.2 N',
-            '44.4 N',
-            '23.6 N',
-            'EQUATOR',
-            '23.6 S',
-            '44.4 S',
-            '64.2 S',
-            '90.0 S']
+    band = [
+        "90.0 N",
+        "64.2 N",
+        "44.4 N",
+        "23.6 N",
+        "EQUATOR",
+        "23.6 S",
+        "44.4 S",
+        "64.2 S",
+        "90.0 S",
+    ]
     # Accumulate the titles here.
-    titles = ['  LATITUDE BELT FROM %7s TO %7s' % (band[j + 1], band[j])
-              for j in range(8)]
+    titles = [
+        "  LATITUDE BELT FROM %7s TO %7s" % (band[j + 1], band[j]) for j in range(8)
+    ]
 
     titles += [
-        '  NORTHERN LATITUDES: 23.6 N TO  90.0 N',
-        '       LOW LATITUDES: 23.6 S TO  23.6 N',
-        '  SOUTHERN LATITUDES: 90.0 S TO  23.6 S',
-        '  NHEM.MID LATITUDES: 23.6 N TO  64.2 N',
-        '  SHEM.MID LATITUDES: 64.2 S TO  23.6 S',
-        'NORTHERN HEMISPHERE',
-        'SOUTHERN HEMISPHERE',
-        'GLOBAL MEANS']
+        "  NORTHERN LATITUDES: 23.6 N TO  90.0 N",
+        "       LOW LATITUDES: 23.6 S TO  23.6 N",
+        "  SOUTHERN LATITUDES: 90.0 S TO  23.6 S",
+        "  NHEM.MID LATITUDES: 23.6 N TO  64.2 N",
+        "  SHEM.MID LATITUDES: 64.2 S TO  23.6 S",
+        "NORTHERN HEMISPHERE",
+        "SOUTHERN HEMISPHERE",
+        "GLOBAL MEANS",
+    ]
 
     # Ensure all titles are 80 characters long.
-    titles = list(map(lambda s: ('%-80s' % s)[:80], titles))
+    titles = list(map(lambda s: ("%-80s" % s)[:80], titles))
     return titles
 
 
@@ -1290,52 +1432,91 @@ def step5_output(results):
     """
     for item in results:
         step5_output_one(item)
-    to_csv(['mixedGLB.Ts.ERSSTV5.GHCN.CL.PA.txt', 'mixedNH.Ts.ERSSTV5.GHCN.CL.PA.txt',
-            'mixedSH.Ts.ERSSTV5.GHCN.CL.PA.txt', 'mixedZonAnn.Ts.ERSSTV5.GHCN.CL.PA.txt',
-            'landGLB.Ts.GHCN.CL.PA.txt', 'landNH.Ts.GHCN.CL.PA.txt', 'landSH.Ts.GHCN.CL.PA.txt',
-            'landZonAnn.Ts.GHCN.CL.PA.txt'])
+    to_csv(
+        [
+            "mixedGLB.Ts.ERSSTV5.GHCN.CL.PA.txt",
+            "mixedNH.Ts.ERSSTV5.GHCN.CL.PA.txt",
+            "mixedSH.Ts.ERSSTV5.GHCN.CL.PA.txt",
+            "mixedZonAnn.Ts.ERSSTV5.GHCN.CL.PA.txt",
+            "landGLB.Ts.GHCN.CL.PA.txt",
+            "landNH.Ts.GHCN.CL.PA.txt",
+            "landSH.Ts.GHCN.CL.PA.txt",
+            "landZonAnn.Ts.GHCN.CL.PA.txt",
+        ]
+    )
     return "Step 5 Completed"
 
 
-def to_csv(filenames=''):
+def to_csv(filenames=""):
     for filename in filenames:
         create_csv(RESULT_DIR + filename)
 
 
 def create_csv(dir_name, txt_title=""):
     if "/graph.txt" in dir_name:
-        file = open(dir_name.replace('/graph.txt', '/graph.csv'), 'w')
+        file = open(dir_name.replace("/graph.txt", "/graph.csv"), "w")
     else:
-        file = open(dir_name.replace('.txt', '.csv'), 'w')
-    wr = csv.writer(file, lineterminator='\n')
+        file = open(dir_name.replace(".txt", ".csv"), "w")
+    wr = csv.writer(file, lineterminator="\n")
     if txt_title == "":
-        txt_title = set_display_name(dir_name.split('/')[-1][:-4])
+        txt_title = set_display_name(dir_name.split("/")[-1][:-4])
     wr.writerow([txt_title])
     for line in open(dir_name).readlines():
-        if re.match(r'\d{4}', line) or line[:4] == "Year" or line[:4] == "Year":
+        if re.match(r"\d{4}", line) or line[:4] == "Year" or line[:4] == "Year":
             csv_line = line.split()
             if "|" in csv_line:
                 csv_line.remove("|")
-            if csv_line == ['Year', 'Glob', 'NHem', 'SHem', '-90N', '-24N', '-24S', '-90N', '-64N', '-44N', '-24N',
-                            '-EQU', '-24S', '-44S', '-64S']:
+            if csv_line == [
+                "Year",
+                "Glob",
+                "NHem",
+                "SHem",
+                "-90N",
+                "-24N",
+                "-24S",
+                "-90N",
+                "-64N",
+                "-44N",
+                "-24N",
+                "-EQU",
+                "-24S",
+                "-44S",
+                "-64S",
+            ]:
                 file.seek(0)
-                csv_line = ['Year', 'Glob', 'NHem', 'SHem', '24N-90N', '24S-24N', '90S-24S', '64N-90N', '44N-64N',
-                            '24N-44N', 'EQU-24N', '24S-EQU', '44S-24S', '64S-44S', '90S-64S']
+                csv_line = [
+                    "Year",
+                    "Glob",
+                    "NHem",
+                    "SHem",
+                    "24N-90N",
+                    "24S-24N",
+                    "90S-24S",
+                    "64N-90N",
+                    "44N-64N",
+                    "24N-44N",
+                    "EQU-24N",
+                    "24S-EQU",
+                    "44S-24S",
+                    "64S-44S",
+                    "90S-64S",
+                ]
             if len(csv_line) == 16:
                 csv_line = csv_line[:-1]
             wr.writerow(csv_line)
 
 
 def set_display_name(filename):
-    display_names = {"landGLB.Ts.GHCN.CL.PA": "Station: Global Means",
-                     "landNH.Ts.GHCN.CL.PA": "Station: Northern Hemispheric Means",
-                     "landSH.Ts.GHCN.CL.PA": "Station: Southern Hemispheric Means",
-                     "mixedGLB.Ts.ERSSTV5.GHCN.CL.PA": "Land-Ocean: Global Means",
-                     "mixedNH.Ts.ERSSTV5.GHCN.CL.PA": "Land-Ocean: Northern Hemispheric Means",
-                     "mixedSH.Ts.ERSSTV5.GHCN.CL.PA": "Land-Ocean: Southern Hemispheric Means",
-                     "landZonAnn.Ts.GHCN.CL.PA": "Station: Annual Zonal Means",
-                     "mixedZonAnn.Ts.ERSSTV5.GHCN.CL.PA": "Land-Ocean: Annual Zonal Means",
-                     }
+    display_names = {
+        "landGLB.Ts.GHCN.CL.PA": "Station: Global Means",
+        "landNH.Ts.GHCN.CL.PA": "Station: Northern Hemispheric Means",
+        "landSH.Ts.GHCN.CL.PA": "Station: Southern Hemispheric Means",
+        "mixedGLB.Ts.ERSSTV5.GHCN.CL.PA": "Land-Ocean: Global Means",
+        "mixedNH.Ts.ERSSTV5.GHCN.CL.PA": "Land-Ocean: Northern Hemispheric Means",
+        "mixedSH.Ts.ERSSTV5.GHCN.CL.PA": "Land-Ocean: Southern Hemispheric Means",
+        "landZonAnn.Ts.GHCN.CL.PA": "Station: Annual Zonal Means",
+        "mixedZonAnn.Ts.ERSSTV5.GHCN.CL.PA": "Land-Ocean: Annual Zonal Means",
+    }
     if filename in display_names:
         return display_names[filename]
     else:
@@ -1365,39 +1546,66 @@ def step5_output_one(item):
     else:
         iyrsp = iyrs - 1
     cur_year = str(cur_year)
-    titl2 = ' zones:  90->64.2->44.4->23.6->0->-23.6->-44.4->-64.2->-90                      '
+    titl2 = " zones:  90->64.2->44.4->23.6->0->-23.6->-44.4->-64.2->-90                      "
     iyrbeg = meta.yrbeg
     jzm = len(ann)
     monm = iyrs * 12
 
     mode = meta.mode
     out = open_step5_outputs(meta, mode)
-    if mode == 'mixed':
+    if mode == "mixed":
         # Check that land and ocean have same range, otherwise, divert
         # output.
         if meta.land_month_range != meta.ocean_month_range:
             # Send output to a set of files starting with "tainted".
             # Note that the original, "mixed", files will have been
             # truncated: This stops anyone using their contents.
-            out = open_step5_outputs(meta, 'tainted')
+            out = open_step5_outputs(meta, "tainted")
 
     # Create and write out the header record of the output files.
     # Remove everything up to the first ')' of the title.
-    if mode == 'mixed':
-        data_category = 'Land-Ocean'
-        sources = 'sources:  GHCN-v4 1880-' + cur_month + '/' + cur_year + ' + SST: ERSST v5 1880-' + cur_month + '/' + cur_year + '\n'
-    elif mode == 'ocean':
-        data_category = 'Ocean'
-        sources = 'sources:  SST: ERSST v5 1880-' + cur_month + '/' + cur_year + '\n'
+    if mode == "mixed":
+        data_category = "Land-Ocean"
+        sources = (
+            "sources:  GHCN-v4 1880-"
+            + cur_month
+            + "/"
+            + cur_year
+            + " + SST: ERSST v5 1880-"
+            + cur_month
+            + "/"
+            + cur_year
+            + "\n"
+        )
+    elif mode == "ocean":
+        data_category = "Ocean"
+        sources = "sources:  SST: ERSST v5 1880-" + cur_month + "/" + cur_year + "\n"
     else:
-        data_category = 'Station'
-        sources = 'sources:  GHCN-v4 1880-' + cur_month + '/' + cur_year + ' (meteorological stations only)\n'
+        data_category = "Station"
+        sources = (
+            "sources:  GHCN-v4 1880-"
+            + cur_month
+            + "/"
+            + cur_year
+            + " (meteorological stations only)\n"
+        )
 
-    header = ' ' * 18 + 'Annual mean ' + data_category + ' Temperature Index in degrees Celsius\n' + \
-             ' ' * 38 + 'selected zonal means\n' + ' ' * 38 + '--------------------\n' + ' ' * 20 + \
-             sources + ' ' * 20 + \
-             'using elimination of outliers and homogeneity adjustment\n' + ' ' * 25 + \
-             'Note: ***** = missing - base period: 1951-1980\n'
+    header = (
+        " " * 18
+        + "Annual mean "
+        + data_category
+        + " Temperature Index in degrees Celsius\n"
+        + " " * 38
+        + "selected zonal means\n"
+        + " " * 38
+        + "--------------------\n"
+        + " " * 20
+        + sources
+        + " " * 20
+        + "using elimination of outliers and homogeneity adjustment\n"
+        + " " * 25
+        + "Note: ***** = missing - base period: 1951-1980\n"
+    )
     print(header, file=out[0])
     # iord literal borrowed exactly from Fortran...
     iord = [16, 14, 15, 9, 10, 11, 1, 2, 3, 4, 5, 6, 7, 8]
@@ -1419,15 +1627,17 @@ def step5_output_one(item):
         The year, *iy*, is lexically captured which is a bit horrible.
         """
         x = int(math.floor(100 * ann[z][iy] + 0.5))
-        x = '%5d' % x
+        x = "%5d" % x
         if len(x) > 5:
-            return '*****'
+            return "*****"
         return x
 
     banner = """
                            24N   24S   90S     64N   44N   24N   EQU   24S   44S   64S   90S
 Year  Glob  NHem  SHem    -90N  -24N  -24S    -90N  -64N  -44N  -24N  -EQU  -24S  -44S  -64S
-""".strip('\n')
+""".strip(
+        "\n"
+    )
     print(banner, file=out[0])
     for iy in range(iy1tab - iyrbeg, iyrsp):
         iyr = iyrbeg + iy
@@ -1436,37 +1646,46 @@ Year  Glob  NHem  SHem    -90N  -24N  -24S    -90N  -64N  -44N  -24N  -EQU  -24S
         row_data = ["-" + x[2:] if x[:2] == "-0" else x for x in row_data]
         row_data = [x[1:] if x[0] == "0" else x for x in row_data]
         for i in range(len(row_data)):
-            if str(row_data[i])[-2] == '.':
+            if str(row_data[i])[-2] == ".":
                 row_data[i] = (str(row_data[i]) + "0").rjust(5)
             else:
                 row_data[i] = str(row_data[i]).rjust(5)
 
-        formatting = '%4d' + ' %s' * 3 + '  ' + ' %s' * 3 + '  ' + ' %s' * 8
+        formatting = "%4d" + " %s" * 3 + "  " + " %s" * 3 + "  " + " %s" * 8
         values = tuple([iyr] + row_data)
         print(formatting % values, file=out[0])
     # The trailing banner is just like the repeated banner, except that
     # "Year  Glob  NHem  SHem" appears on on the first line, not the
     # second line (and the same for the "Year" that appears at the end
     # of the line).  *sigh*.
-    banner = banner.split('\n')
+    banner = banner.split("\n")
 
-    banner[0] = banner[1][:24] + banner[0][24:] + ' Year'
-    banner[1] = ' ' * 24 + banner[1][24:-5]
-    banner = '\n'.join(banner)
+    banner[0] = banner[1][:24] + banner[0][24:] + " Year"
+    banner[1] = " " * 24 + banner[1][24:-5]
+    banner = "\n".join(banner)
 
-    tit = ['GLOBAL', 'N.HEMISPH.', 'S.HEMISPH.']
+    tit = ["GLOBAL", "N.HEMISPH.", "S.HEMISPH."]
     # Shift the remaining 3 output files so that the indexing works out.
     out = out[1:]
-    banner = 'Year    Jan   Feb   Mar   Apr   May   Jun   Jul   Aug   Sep   Oct   Nov   Dec     J-D   D-N     DJF   MAM   JJA   SON'
+    banner = "Year    Jan   Feb   Mar   Apr   May   Jun   Jul   Aug   Sep   Oct   Nov   Dec     J-D   D-N     DJF   MAM   JJA   SON"
     # All the "WRITE(96+J" stuff in the Fortran is replaced with this
     # enumeration into the *out* array (an array of file descriptors).
     for j, outf in enumerate(out):
-        header = ' ' * 18 + tit[j] + ' ' + data_category + \
-                 ' Temperature Index in degrees Celsius   base period: 1951-1980\n\n' + \
-                 ' ' * 30 + sources + \
-                 ' ' * 30 + 'using elimination of outliers and homogeneity adjustment\n' + \
-                 ' ' * 30 + 'Notes: 1950 DJF = Dec 1949 - Feb 1950 ;  ***** = missing\n\n' + \
-                 ' ' * 83 + 'AnnMean'
+        header = (
+            " " * 18
+            + tit[j]
+            + " "
+            + data_category
+            + " Temperature Index in degrees Celsius   base period: 1951-1980\n\n"
+            + " " * 30
+            + sources
+            + " " * 30
+            + "using elimination of outliers and homogeneity adjustment\n"
+            + " " * 30
+            + "Notes: 1950 DJF = Dec 1949 - Feb 1950 ;  ***** = missing\n\n"
+            + " " * 83
+            + "AnnMean"
+        )
         print(header, file=outf)
         print(banner, file=outf)
         for iy in range(iy1tab - iyrbeg, iyrs):
@@ -1483,7 +1702,7 @@ Year  Glob  NHem  SHem    -90N  -24N  -24S    -90N  -64N  -44N  -24N  -EQU  -24S
             if iy > 0:
                 season[0] = zdata[iy - 1][11] + zdata[iy][0] + zdata[iy][1]
             for s in range(1, 4):
-                season[s] = sum(zdata[iy][s * 3 - 1:s * 3 + 2])
+                season[s] = sum(zdata[iy][s * 3 - 1 : s * 3 + 2])
             # Each season slots into slots 14 to 17 of *row*.
             for s, x in enumerate(season):
                 if x < 8000:
@@ -1510,25 +1729,30 @@ Year  Glob  NHem  SHem    -90N  -24N  -24S    -90N  -64N  -44N  -24N  -EQU  -24S
             # *sout*.
             formatted_row = [None] * len(row)
             for i, x in enumerate(row):
-                x = '%5d' % x
+                x = "%5d" % x
                 if len(x) > 5:
-                    x = '  ***'
+                    x = "  ***"
                 formatted_row[i] = x
             year = iyrbeg + iy
 
-            formatted_row = [str(int(x) / 100) if "*" not in x else x for x in formatted_row]
+            formatted_row = [
+                str(int(x) / 100) if "*" not in x else x for x in formatted_row
+            ]
             formatted_row = ["-" + x[2:] if x[:2] == "-0" else x for x in formatted_row]
             formatted_row = [x[1:] if x[0] == "0" else x for x in formatted_row]
             for i in range(len(formatted_row)):
-                if str(formatted_row[i])[-2] == '.':
+                if str(formatted_row[i])[-2] == ".":
                     formatted_row[i] = (str(formatted_row[i]) + "0").rjust(6)
                 else:
                     formatted_row[i] = str(formatted_row[i]).rjust(6)
-            print(('%4d ' + '%s' * 12 + '  %s%s  ' + '%s' * 4) % tuple([year] + formatted_row),
-                  file=outf)
+            print(
+                ("%4d " + "%s" * 12 + "  %s%s  " + "%s" * 4)
+                % tuple([year] + formatted_row),
+                file=outf,
+            )
 
     # Save monthly means on disk.
-    zono = open(os.path.join(RESULT_DIR, make_filename(meta, 'ZON') + '.npz'), 'wb')
+    zono = open(os.path.join(RESULT_DIR, make_filename(meta, "ZON") + ".npz"), "wb")
     result = []
 
     titl2 = titl2.encode()
@@ -1538,7 +1762,7 @@ Year  Glob  NHem  SHem    -90N  -24N  -24S    -90N  -64N  -44N  -24N  -EQU  -24S
     meta_data = np.array(meta_data, dtype=object)
     for jz in range(jzm):
         result.append([[zone_titles[jz].encode()], np.array(data[jz]).ravel()])
-    #np.savez_compressed(zono, *result, meta=meta_data)
+    # np.savez_compressed(zono, *result, meta=meta_data)
     zono.close()
 
 
@@ -1550,8 +1774,9 @@ def open_step5_outputs(meta, mode):
     usually one of 'land', 'ocean', or 'mixed'.
     """
 
-    parts = ['ZonAnn', 'GLB', 'NH', 'SH']
+    parts = ["ZonAnn", "GLB", "NH", "SH"]
     files = [
-        open(os.path.join(RESULT_DIR, make_text_filename(meta, mode, part)), 'w')
-        for part in parts]
+        open(os.path.join(RESULT_DIR, make_text_filename(meta, mode, part)), "w")
+        for part in parts
+    ]
     return files

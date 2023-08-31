@@ -12,11 +12,13 @@ import struct
 
 class Error(Exception):
     """An Exception."""
+
     pass
 
 
 class FormatError(Error):
     """A problem with the expected format of a file."""
+
     pass
 
 
@@ -35,7 +37,7 @@ class File:
     #: the same convention.  See
     #: http://docs.python.org/lib/module-struct.html
     #: '<' little-endian, '>' big-endian.
-    bos = '<'
+    bos = "<"
 
     def readi(self):
         """Read a single signed integer from the file and return it.  If at
@@ -45,13 +47,13 @@ class File:
 
         l = self.fd.read(self.w)
         if l:
-            if l == '':
+            if l == "":
                 return None
 
-            l = struct.unpack(self.bos + 'i', l)[0]
+            l = struct.unpack(self.bos + "i", l)[0]
             return l
 
-    def __init__(self, fd, bos='@'):
+    def __init__(self, fd, bos="@"):
         """A new Fortran File object that performs Fortran-style binary IO
         on the file object fd (normally this will be a file opened with the
         builtin 'open' in binary mode, but it doesn't have to be).  bos
@@ -67,9 +69,9 @@ class File:
         # to read for the record length (which is stored in self.w).  We only
         # care about the result's length.
         try:
-            self.w = len(struct.pack(bos + 'i', 7))
+            self.w = len(struct.pack(bos + "i", 7))
         except struct.error:
-            raise 'suspect bos character: ' + bos
+            raise "suspect bos character: " + bos
         # Byte Order and Size.  Specifies the byte order and sizes used in the
         # underlying file.  This is used in a Python struct format so we use
         # the same convention.  See
@@ -90,9 +92,7 @@ class File:
         return self.fd.seek(offset, whence)
 
     def close(self):
-        """Close the underlying file.
-
-        """
+        """Close the underlying file."""
         return self.fd.close()
 
     def flush(self):
@@ -116,7 +116,7 @@ class File:
         assert self.w == 4
 
         # Location of start of record.
-        at = 'unknown'
+        at = "unknown"
         try:
             at = self.fd.tell()
         except:
@@ -133,7 +133,8 @@ class File:
             at = str(at)
             raise FormatError(
                 "Record prefix %d does not match suffix %r;"
-                " record starting at %s." % (l, check, at))
+                " record starting at %s." % (l, check, at)
+            )
         # Instead...
         assert check == l
         return r
@@ -144,7 +145,7 @@ class File:
         # length.
 
         assert self.w == 4
-        l = struct.pack(self.bos + 'I', len(record))
+        l = struct.pack(self.bos + "I", len(record))
         self.fd.write(l)
         self.fd.write(record)
         self.fd.write(l)
@@ -161,12 +162,12 @@ class File:
         return r
 
 
-def open(name, mode='rb'):
+def open(name, mode="rb"):
     """Open the binary Fortran file called name.  mode is a mode string as
     per the builtin open function; for this version of this module it must
     be 'rb'."""
 
-    assert 'b' in mode
+    assert "b" in mode
 
     return File(open(name, mode))
 
@@ -211,20 +212,20 @@ def unpackRecord(line, start, fmt):
     a = start - 1
     for f in fmt.replace(" ", "").split(","):
         count = 0
-        if f.find('i') > 0:
-            count, b = [int(x) for x in f.split('i')]
-            typeCode = 'i'
+        if f.find("i") > 0:
+            count, b = [int(x) for x in f.split("i")]
+            typeCode = "i"
         else:
             typeCode, b = f[0], int(f[1:])
         if count:
             arr = []
             for i in range(count):
-                v = line[a:a + b]
+                v = line[a : a + b]
                 arr.append(int(v))
                 a = a + b
             v = arr
         else:
-            v = line[a:a + b]
+            v = line[a : a + b]
             if typeCode == "i":
                 v = int(v)
             a = a + b
