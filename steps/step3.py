@@ -50,6 +50,7 @@ def incircle(iterable, arc, lat, lon):
     for record in iterable:
         st = record.station
         s_lat, s_lon = st.lat, st.lon
+
         # A possible improvement in speed (which the corresponding
         # Fortran code does) would be to store the trig values of
         # the station location in the station object.
@@ -118,6 +119,7 @@ def iter_subbox_grid(station_records, max_months, first_year, radius):
                 "\rsubbox at %+05.1f%+06.1f (%d empty)" % (centre + (n_empty_cells,))
             )
             dribble.flush()
+
             # Determine the contributing stations to this grid cell.
             contributors = list(incircle(station_records, arc, *centre))
 
@@ -231,6 +233,7 @@ def step3(records, radius=parameters.gridding_radius, year_begin=1880):
     last_year = giss_data.get_last_year()
     year_begin = giss_data.BASE_YEAR
     assert year_begin <= last_year
+
     # Compute total number of months in a fixed length record.
     monm = 12 * (last_year - year_begin + 1)
     meta = giss_data.SubboxMetaData(

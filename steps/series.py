@@ -39,8 +39,7 @@ def combine(composite, weight, new, new_weight, min_overlap):
     for m in range(12):
         sum_new = 0.0  # Sum of data in new
         sum = 0.0  # Sum of data in composite
-        # Number of years where both new and composite are valid.
-        count = 0
+        count = 0  # Number of years where both new and composite are valid.
         for a, n in zip(composite[m::12], new[m::12]):
             if invalid(a) or invalid(n):
                 continue
@@ -187,6 +186,7 @@ def monthly_annual(data):
     ]:
         # Need at least two valid months for a valid season.
         seasonal_mean.append(valid_mean((monthly_mean[m] for m in months), min=2))
+
         # A list of 3 data series, each being an extract for a
         # particular month.
         month_in_season = []

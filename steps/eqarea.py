@@ -95,6 +95,7 @@ def southern40():
     """
     # Note: Avoid "reversed" because it is not in Python 2.3
     n = list(northern40())
+
     # We want to take the northern list and reverse the bands, within each
     # band the boxes will still be in the same order.  So first
     # gather into bands.
@@ -103,10 +104,13 @@ def southern40():
     for w in band_boxes:
         band.append(n[i : i + w])
         i += w
+
     # Then reverse the band list
     band.reverse()
+
     # And stitch back into a single, southern, list
     s = []
+
     # Note: used for side-effect!
     for x in band:
         s.extend(x)

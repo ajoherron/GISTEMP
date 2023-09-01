@@ -55,10 +55,10 @@ def urban_adjustments(record_stream):
         urban station.
     """
     rural_stations, urban_stations, all = annotate_records(record_stream)
+
     # Combine time series for rural stations around each urban station
     for record in all:
         us = urban_stations.get(record, None)
-
         if us is None:
             # Not an urban station.  Pass through unchanged.
             log.write('%s step2-action "rural"\n' % record.uid)
@@ -98,10 +98,9 @@ def annotate_records(stream):
 
     rural_stations = []
     urban_stations = {}
-
     pi180 = math.pi / 180.0
-
     all = []
+
     for record in stream:
         all.append(record)
         anomalies = annual_anomaly(record)
@@ -161,6 +160,7 @@ def annual_anomaly(record):
     monthly_means = []
     for m in range(12):
         month_data = series[m::12]
+
         # Neglect December of final year, as we do not use its season.
         if m == 11:
             month_data = month_data[:-1]
@@ -186,6 +186,7 @@ def annual_anomaly(record):
             # valid seasonal anomaly requires at least 2 valid months
             if count[s] >= 2:
                 season_anomalies.append(total[s] / count[s])
+
         # valid annual anomaly requires at least 3 valid seasons
         if len(season_anomalies) > 2:
             good = True
@@ -402,8 +403,10 @@ def prepare_series(from_year, combined, urban_series, counts):
 
     # Calendar year corresponding to first datum in series.
     year_offset = giss_data.BASE_YEAR
+
     # Number of valid quorate years
     quorate_count = 0
+
     # Used to truncate the series to the last quorate year, immediately
     # before returning it.
     length = 0
@@ -468,7 +471,6 @@ def rural_difference(urban, rural_stations):
                 parameters.urban_adjustment_proportion_good * (last - first + 0.9)
             ):
                 # Found a suitable combined record.
-
                 log.write('%s step2-action "adjusted"\n' % urban.uid)
                 log.write(
                     "%s neighbours %r\n"
@@ -543,7 +545,6 @@ def trend2(points, xmid, min):
     sx0 = sx1 = 0
     sxx0 = sxx1 = 0
     sxa0 = sxa1 = 0
-
     sa = 0.0
     saa = 0.0
 
@@ -570,9 +571,7 @@ def trend2(points, xmid, min):
     count = count0 + count1
     denom = count * sxx0 * sxx1 - sxx0 * sx1**2 - sxx1 * sx0**2
     sl1 = (sx0 * (sx1 * sxa1 - sxx1 * sa) + sxa0 * (count * sxx1 - sx1**2)) / denom
-
     sl2 = (sx1 * (sx0 * sxa0 - sxx0 * sa) + sxa1 * (count * sxx0 - sx0**2)) / denom
-
     ymid = (sa - sl1 * sx0 - sl2 * sx1) / count
     rms = (
         count * ymid**2
@@ -618,6 +617,7 @@ def extend_range(series, count, first, last):
     valid_years = [i for i, x in enumerate(series) if valid(x)]
     urban_first = min(valid_years)
     urban_last = max(valid_years)
+
     # Convert to calendar years, and extend by 1 year in each
     # direction to include possible partial years.
     urban_first += giss_data.BASE_YEAR - 1
@@ -679,17 +679,19 @@ def adjust_record(record, fit, adjust_first, adjust_last):
         sl = sl1
         if iy > fit.knee:
             sl = sl2
+
         # For the purposes of calculating the adjustment for the year,
         # clamp to the range [fit.first, fit.last].
         iya = max(fit.first, min(iy, fit.last))
         adj = (iya - fit.knee) * sl - (fit.last - fit.knee) * sl2
+
         # The anomaly years run from Dec to Nov.  So the adjustment
         # years do too.
         # The index into *series* that corresponds to December
         # immediately before the beginning of year *iy*.
         dec = 12 * (iy - record.first_year) - 1
-        # *m* is an index into the *series* array.
 
+        # *m* is an index into the *series* array.
         for m in range(dec, dec + 12):
             try:
                 if m >= 0 and valid(record.series[m]):

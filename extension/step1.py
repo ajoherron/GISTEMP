@@ -93,6 +93,7 @@ def do_combine(stream, log, select_func, combine_func):
             record.ann_mean = ann_mean
         begin, end = records_begin_end(records)
         years = end - begin + 1
+
         # reduce the collection of records (by combining) until there
         # are none (or one) left.
         while records:
@@ -216,14 +217,12 @@ def find_quintuples(sums, wgts, record, new_id, log):
 
     # An identifier common to all the log output.
     logid = "%s %s" % (new_id, record.uid)
-
     rec_begin = record.first_valid_year()
     rec_end = record.last_valid_year()
-
     actual_begin, actual_end = get_actual_endpoints(wgts, record.first_year)
-
     max_begin = max(actual_begin, rec_begin)
     min_end = min(actual_end, rec_end)
+
     # Since max_begin and min_end are integers, this rounds fractional
     # middle years up.
     middle_year = int(0.5 * (max_begin + min_end) + 0.5)
@@ -242,6 +241,7 @@ def find_quintuples(sums, wgts, record, new_id, log):
     # within *rad* years either side of *middle_year* both records have
     # *parameters.station_combine_min_mid_year* valid annnual anomalies.
     ov_success = False
+
     # The overlap is "okay" when the difference in annual temperature is
     # below a certain threshold.
     okay_flag = False
@@ -309,6 +309,7 @@ def records_begin_end(records):
 
     first_years = set(record.first_year for record in records)
     assert 1 == len(first_years)
+
     y_min = list(first_years)[0]
     y_max = max(record.last_year for record in records)
     return y_min, y_max
@@ -331,8 +332,10 @@ def adjust_discont(stream):
             series = record.series
             this_year, month, summand = adjust[id]
             begin = record.first_year
+
             # Index of month specified by *adjust*.
             m = (this_year - begin) * 12 + month - 1
+
             # All valid data up to and including M get adjusted.
             for i in range(m + 1):
                 datum = series[i]
@@ -351,9 +354,7 @@ def average(sums, counts):
     """
 
     assert len(sums) == len(counts)
-
     data = [MISSING] * (len(sums))
-
     for i, (sum, count) in enumerate(zip(sums, counts)):
         if count:
             data[i] = float(sum) / count
@@ -366,6 +367,7 @@ def sigma(list):
     list = list(filter(valid, list))
     if len(list) == 0:
         return MISSING
+
     # Two pass method ensures argument to sqrt is always positive.
     mean = sum(list) / len(list)
     sigma_squared = sum((x - mean) ** 2 for x in list)
@@ -391,6 +393,7 @@ def get_longest_overlap(target, begin, records):
     mean, anoms = series.monthly_annual(target)
     overlap = 0
     diff = None
+
     # :todo: the records are consulted in an essentially arbitrary
     # order (which depends on the implementation), but the order
     # may affect the result.  Tie breaks go to the last record consulted.
@@ -429,10 +432,11 @@ def fresh_arrays(record, years):
     # Number of months in record.
     rec_months = len(record)
     assert rec_months <= nmonths
-
     sums = [0.0] * nmonths
+
     # Copy valid data rec_data into sums, assigning 0 for invalid data.
     sums[:rec_months] = (valid(x) * x for x in record.series)
+
     # Let wgts[i] be 1 where sums[i] is valid.
     wgts = [0] * nmonths
     wgts[:rec_months] = (int(valid(x)) for x in record.series)

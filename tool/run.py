@@ -22,6 +22,7 @@ import parameters
 import fetch
 import time
 import os
+import gio  # Clear Climate Code
 
 from settings import *
 from steps import step0
@@ -31,9 +32,6 @@ from steps import step2
 from steps import step3
 from steps import step4
 from steps import step5
-
-# Clear Climate Code
-import gio
 
 
 try:
@@ -216,6 +214,7 @@ def update_parameters(parm):
         # Coerce value, a string, to the same type as the existing parameter
         # value.  That works nicely for strings, ints, and floats...
         x = getattr(parameters, key)
+
         # ... but we need a hack for bool.
         if type(x) == bool:
             try:
@@ -293,6 +292,7 @@ def main(argv=None):
 
     for step in step_list:
         data = step_fn[step](data)
+
     # Consume the data in whatever the last step was, in order to
     # write its output, and hence suck data through the whole
     # pipeline.

@@ -377,6 +377,7 @@ class Fetcher(object):
             # rejects the HTTP request otherwise). urllib2 does
             # this, but urllib does not.
             remote = urllib.request.urlopen(url)
+
             # Check getcode(), but only for HTTP.
             if remote.getcode() and remote.getcode() != 200:
                 raise Error(
@@ -455,6 +456,7 @@ class Fetcher(object):
                     self.make_prefix()
                     out = open(local, "wb")
                     self.output.write("  ... %s from %s.\n" % (local, info.name))
+
                     # The following used to be simply
                     # ``out.writelines(tar.extractfile(info))``, but the Python2.4
                     # tarfile.py does not provide iteration support.
@@ -488,6 +490,7 @@ class Fetcher(object):
                     self.output.write("  ... %s already exists.\n" % local)
                 else:
                     self.make_prefix()
+
                     # Only works for text files.
                     out = open(local, "w")
                     self.output.write("  ... %s from %s.\n" % (local, entry))

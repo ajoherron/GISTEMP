@@ -86,6 +86,7 @@ def land_ocean_boxes(meta, cells):
     maxocean = -999999
     for landweight, landcell, oceancell in cells:
         land.append(landcell)
+
         # Simple version of mixed selects either land or ocean.
         assert landweight in (0, 1)
         if landweight:
@@ -183,6 +184,7 @@ def subbox_to_box(meta, cells, celltype="BOX"):
 
     # The (80) large boxes.
     boxes = list(eqarea.grid())
+
     # For each box, make a list of contributors (cells that contribute
     # to the box time series); initially empty.
     contributordict = dict((box, []) for box in boxes)
@@ -218,6 +220,7 @@ def subbox_to_box(meta, cells, celltype="BOX"):
         l = [any(valid(v) for v in box_series[i::12]) for i in range(12)]
         s = "".join("01"[x] for x in l)
         contributed = [[best.uid, 1.0, s]]
+
         # Loop over the remaining contributors.
         for cell in contributors[1:]:
             if cell.good_count >= parameters.subbox_min_valid:
@@ -294,14 +297,17 @@ def zonav(meta, boxed_data):
     lenz = [None] * bands
     wt = [None] * bands
     avg = [None] * bands
+
     # For each band, combine all the boxes in that band to create a band
     # record.
     for band in range(bands):
         # The temperature (anomaly) series for each of the boxes in this
         # band.
         box_series = [None] * boxes_in_band[band]
+
         # The weight series for each of the boxes in this band.
         box_weights = [None] * boxes_in_band[band]
+
         # "length" is the number of months (with valid data) in the box
         # series.  For each box in this band.
         box_length = [None] * boxes_in_band[band]
@@ -369,11 +375,13 @@ def zonav(meta, boxed_data):
         else:
             # Should be an assertion really.
             raise Exception("No band in compound zone %d." % zone)
+
         band = iord[j1]
         if lenz[band] == 0:
             print("**** NO DATA FOR ZONE %d" % band)
         wtg = list(wt[band])
         avgg = list(avg[band])
+
         # Add in the remaining bands, in length order.
         for j in range(j1 + 1, bands):
             band = iord[j]
@@ -484,6 +492,7 @@ def annzon(meta, zoned_averages, alternate=None):
     if alternate["global"]:
         glb = alternate["global"]
         assert glb in (1, 2)
+
         # Pick which "four" zones to use.
         # (subtracting 1 from each zone to convert to Python convention)
         if glb == 1:

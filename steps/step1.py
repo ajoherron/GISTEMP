@@ -55,13 +55,15 @@ def drop_strange(data):
                     # range of the series.  In which case, pass record
                     # unchanged.
                     continue
+
                 # Invalidate the data.
                 nmonths = (year2 + 1 - year1) * 12
                 series[(year1 - begin) * 12 : (year2 + 1 - begin) * 12] = [
                     MISSING
                 ] * nmonths
 
-            else:  # remove a single month
+            else:
+                # remove a single month
                 # It can happen that the datum-to-be-removed is outside
                 # the date range for this record (if we are using new
                 # config files, and old data).  So we check.

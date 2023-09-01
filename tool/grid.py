@@ -31,6 +31,7 @@ def map(when, inp, out):
 
     m = re.match(RE_WHEN, when)
     year, month = m.groups()
+
     # Convert to 0-based month.
     month = int(month) - 1
     assert 0 <= month < 12

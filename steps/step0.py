@@ -61,7 +61,6 @@ def step0(input):
     else:
         # append scar data to inv file
         # append_scar()
-
         # generate BI for inv file
         generate_brightness.run()
 

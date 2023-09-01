@@ -77,6 +77,7 @@ class File:
         # the same convention.  See
         # http://docs.python.org/lib/module-struct.html
         self.bos = bos
+
         # Try and assign name, but don't fuss if we can't.
         try:
             self.name = fd.name
@@ -125,8 +126,10 @@ class File:
         l = self.readi()
         if l is None:
             return None
+
         # then the l bytes of the record itself ...
         r = self.fd.read(l)
+
         # then check the terminating word is also equal to l
         check = self.readi()
         if check != l:
@@ -135,6 +138,7 @@ class File:
                 "Record prefix %d does not match suffix %r;"
                 " record starting at %s." % (l, check, at)
             )
+
         # Instead...
         assert check == l
         return r

@@ -254,6 +254,7 @@ class SubboxReader(object):
             fields = list(struct.unpack(self.bos + fmt, rec))
             series = fields[8:]
             self.mo1 = fields[0]
+
             # Make an attributes dictionary.
             # The box boundaries are fields[1:5], but we need to scale
             # them to fractional degrees first:
@@ -334,6 +335,7 @@ class SubboxReaderNpz(object):
             rec = self.f[rec]
             fields = rec[0]
             series = rec[1]
+
             # Make an attributes dictionary.
             # The box boundaries are fields[1:5], but we need to scale
             # them to fractional degrees first:
@@ -441,8 +443,8 @@ def GHCNV4Reader(
 
         # This function captures *multiplier* which can, in principle,
         # change for each line.
-
         v = int(s[:5])
+
         # Flags for Measurement (missing days), Quality, and
         # Source.
         m, q, s = s[5:8]
@@ -889,6 +891,7 @@ def maskboxes(inp, grid):
         lat = float(row[:5])
         lon = float(row[5:11])
         s, n, w, e = box
+
         # If either of these fail, the input mask is in wrong sequence.
         assert s < lat < n
         assert w < lon < e
@@ -1398,6 +1401,7 @@ def step5_zone_titles():
         "64.2 S",
         "90.0 S",
     ]
+
     # Accumulate the titles here.
     titles = [
         "  LATITUDE BELT FROM %7s TO %7s" % (band[j + 1], band[j]) for j in range(8)
@@ -1536,11 +1540,13 @@ def step5_output_one(item):
     iyrs = cur_year - 1879
     m += 1
     cur_month = str(m).zfill(2)
+
     # If we have the complete year we can add the current year to the zonal means files
     if m == 12:
         iyrsp = iyrs
     else:
         iyrsp = iyrs - 1
+
     cur_year = str(cur_year)
     titl2 = " zones:  90->64.2->44.4->23.6->0->-23.6->-44.4->-64.2->-90                      "
     iyrbeg = meta.yrbeg
@@ -1603,8 +1609,10 @@ def step5_output_one(item):
         + "Note: ***** = missing - base period: 1951-1980\n"
     )
     print(header, file=out[0])
+
     # iord literal borrowed exactly from Fortran...
     iord = [16, 14, 15, 9, 10, 11, 1, 2, 3, 4, 5, 6, 7, 8]
+
     # ... and then adjusted for Python index convention.
     iord = list(map(lambda x: x - 1, iord))
 
@@ -1650,6 +1658,7 @@ Year  Glob  NHem  SHem    -90N  -24N  -24S    -90N  -64N  -44N  -24N  -EQU  -24S
         formatting = "%4d" + " %s" * 3 + "  " + " %s" * 3 + "  " + " %s" * 8
         values = tuple([iyr] + row_data)
         print(formatting % values, file=out[0])
+
     # The trailing banner is just like the repeated banner, except that
     # "Year  Glob  NHem  SHem" appears on on the first line, not the
     # second line (and the same for the "Year" that appears at the end
@@ -1664,6 +1673,7 @@ Year  Glob  NHem  SHem    -90N  -24N  -24S    -90N  -64N  -44N  -24N  -EQU  -24S
     # Shift the remaining 3 output files so that the indexing works out.
     out = out[1:]
     banner = "Year    Jan   Feb   Mar   Apr   May   Jun   Jul   Aug   Sep   Oct   Nov   Dec     J-D   D-N     DJF   MAM   JJA   SON"
+
     # All the "WRITE(96+J" stuff in the Fortran is replaced with this
     # enumeration into the *out* array (an array of file descriptors).
     for j, outf in enumerate(out):
@@ -1690,7 +1700,6 @@ Year  Glob  NHem  SHem    -90N  -24N  -24S    -90N  -64N  -44N  -24N  -EQU  -24S
             row = [100 * XBAD] * 18
 
             # *data* for this zone, avoids some duplication of code.
-
             zdata = data[iord[j]]
 
             # 4 seasons.
@@ -1699,14 +1708,17 @@ Year  Glob  NHem  SHem    -90N  -24N  -24S    -90N  -64N  -44N  -24N  -EQU  -24S
                 season[0] = zdata[iy - 1][11] + zdata[iy][0] + zdata[iy][1]
             for s in range(1, 4):
                 season[s] = sum(zdata[iy][s * 3 - 1 : s * 3 + 2])
+
             # Each season slots into slots 14 to 17 of *row*.
             for s, x in enumerate(season):
                 if x < 8000:
                     row[14 + s] = int(round(100.0 * x / 3))
+
             # Meteorological Year is average of 4 seasons.
             metann = sum(season)
             if metann < 8000:
                 row[13] = int(round(100.0 * metann / 12))
+
             # Calendar year as previously computed.
             calann = ann[iord[j]][iy]
 
@@ -1717,6 +1729,7 @@ Year  Glob  NHem  SHem    -90N  -24N  -24S    -90N  -64N  -44N  -24N  -EQU  -24S
 
             if calann < 8000:
                 row[12] = int(round(100.0 * ann[iord[j]][iy]))
+
             # Fill in the months.
             for m in range(12):
                 row[m] = int(round(100.0 * zdata[iy][m]))

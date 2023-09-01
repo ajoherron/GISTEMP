@@ -136,6 +136,8 @@ class StationMetaData(object):
 #    make the code that manipulates temperature series more readable.
 # 2. Should we use properties or convert the properties to methods?
 # 3. Some of the names are open to improvement.
+
+
 class Series(object):
     """Monthly temperature Series.
 
