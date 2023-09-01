@@ -7,7 +7,9 @@
 # Avi Persin, Revision 2016-01-06
 #
 # BSD license, see license.txt
+
 from settings import *
+from tool import generate_brightness
 
 """
 Python code for the STEP0 part of the GISTEMP algorithm: combining
@@ -61,8 +63,6 @@ def step0(input):
         # append_scar()
 
         # generate BI for inv file
-        from tool import generate_brightness
-
         generate_brightness.run()
 
     # Read each data input into dictionary form.

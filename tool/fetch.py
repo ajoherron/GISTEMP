@@ -82,24 +82,23 @@ The config file syntax is as follows:
     The default group name is the empty string.
 """
 
-# http://www.python.org/doc/2.4.4/lib/module-getopt.html
-import getopt
-
-# http://docs.python.org/release/2.4.4/lib/module-os.html
-# http://www.python.org/doc/2.4.4/lib/module-sys.html
-import sys
-
-# https://docs.python.org/2.6/library/urllib2.html
-import urllib.request
+import getopt  # http://www.python.org/doc/2.4.4/lib/module-getopt.html
+import sys  # http://www.python.org/doc/2.4.4/lib/module-sys.html
+import urllib.request  # https://docs.python.org/2.6/library/urllib2.html
 import ssl
-
 import itertools
 import re
-
-from settings import *
-
 import tarfile
 import zipfile
+import datetime
+import urllib.request as urllib
+import ssl
+import os
+import ftplib  # http://www.python.org/doc/2.4.4/lib/module-ftplib.html
+import gzip
+import shutil
+
+from settings import *
 
 
 class Fetcher(object):
@@ -127,10 +126,6 @@ class Fetcher(object):
     # Get most recent GHCN data file
     def get_ghcn_file(self, url):
         public_dir = url.replace("ghcnm.tavg.qcf.dat", "")
-        import datetime
-        import urllib.request as urllib
-        import ssl
-
         context = ssl._create_unverified_context()
         response = urllib.urlopen(public_dir, context=context)
         html = response.read().decode()
@@ -365,8 +360,6 @@ class Fetcher(object):
             raise Error("Unknown protocol '%s' in URL '%s'" % (protocol, url))
 
     def fetch_url(self, url, local, members=None):
-        import os
-
         if local is None:
             local = url.split("/")[-1]
         name = os.path.join(self.prefix, local.strip())
@@ -399,9 +392,6 @@ class Fetcher(object):
 
     def ftpmatch(self, host, path, pattern, local, members):
         regexp = re.compile(pattern)
-        # http://www.python.org/doc/2.4.4/lib/module-ftplib.html
-        import ftplib
-
         remote = ftplib.FTP(host, "ftp", "info@climatecode.org")
         remote.cwd(path)
         dir = remote.nlst()
@@ -516,9 +506,6 @@ class Fetcher(object):
             )
 
     def extract_gzip(self, name, members):
-        import gzip
-        import shutil
-
         if len(members) > 1:
             raise Error(
                 "Simple compressed file, %r, is only allowed exactly one member", name

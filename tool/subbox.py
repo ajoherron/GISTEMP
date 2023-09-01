@@ -40,15 +40,21 @@ and black for 1.000 (use land).
 """
 
 import csv
-
-# http://docs.python.org/release/2.4.4/lib/module-itertools.html
-import itertools
+import itertools  # http://docs.python.org/release/2.4.4/lib/module-itertools.html
 import math
+import gio
+import sys
+import math
+import png
+import getopt
+import trend
 
 # Clear Climate Code
 from code import eqarea
 from code.giss_data import MISSING
-import gio
+
+# :todo: move into proper module.
+from landmask import centrein
 
 
 def to_polar_svg(inp, date=None, inv=None, lat=None, trend=False):
@@ -167,8 +173,6 @@ def cell_svg(qs, fill_arg, scale, id=None):
     Output a fragment of SVG.
     """
 
-    import math
-
     # Radius of Northern edge.
     rn = math.hypot(*qs[0])
     # Radius of Southern edge.
@@ -219,14 +223,7 @@ def to_rect_png(inp, date=None):
     subbox file.
     """
 
-    # http://code.google.com/p/pypng/
-    import png
-
     values = cells(inp, date)
-
-    # :todo: move into proper module.
-    from landmask import centrein
-
     resolution = 0.25
     width = 360 / resolution
     height = 180 / resolution
@@ -323,8 +320,6 @@ def extract_date(inp, cells, date):
 
 
 def extract_trend(inp, cells):
-    import trend
-
     records = iter(gio.SubboxReader(inp))
     meta = next(records)
     base_year = meta.yrbeg
@@ -401,8 +396,6 @@ def to_ghcnm(inp):
     Convert a file inp from subbox to GHCN-M (v3) format.
     """
 
-    import sys
-
     out = sys.stdout
 
     w = gio.GHCNV3Writer(file=out)
@@ -426,16 +419,11 @@ def id11(box):
 
 
 def bad(*l, **k):
-    import sys
-
     print(__doc__.strip(), sys.stderr)
     sys.exit(2)
 
 
 def main(argv=None):
-    import sys
-    import getopt
-
     if argv is None:
         argv = sys.argv
 

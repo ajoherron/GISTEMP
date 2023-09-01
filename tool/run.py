@@ -14,14 +14,27 @@ Options:
                   If this option is omitted, run all steps in order.
 """
 
-# http://www.python.org/doc/2.4.4/lib/module-os.html
+import os  # http://www.python.org/doc/2.4.4/lib/module-os.html
+import re  # http://docs.python.org/release/2.4.4/lib/module-re.html
+import sys  # http://www.python.org/doc/2.4.4/lib/module-sys.html
+import optparse
+import parameters
+import fetch
+import time
 import os
 
-# http://docs.python.org/release/2.4.4/lib/module-re.html
-import re
+from settings import *
+from steps import step0
+from steps import step1
+from extension import step1 as estep1
+from steps import step2
+from steps import step3
+from steps import step4
+from steps import step5
 
-# http://www.python.org/doc/2.4.4/lib/module-sys.html
-import sys
+# Clear Climate Code
+import gio
+
 
 try:
     rootdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -36,11 +49,6 @@ except:
     sys.exit()
 
 sys.path.append(os.getcwd())
-
-from settings import *
-
-# Clear Climate Code
-import gio
 
 
 class Fatal(Exception):
@@ -75,8 +83,6 @@ def mkdir(path):
 
 
 def run_step0(data):
-    from steps import step0
-
     if data is None:
         data = gio.step0_input()
     result = step0.step0(data)
@@ -84,9 +90,6 @@ def run_step0(data):
 
 
 def run_step1(data):
-    from steps import step1
-    from extension import step1 as estep1
-
     if data is None:
         data = gio.step1_input()
     pre = estep1.pre_step1(data)
@@ -96,8 +99,6 @@ def run_step1(data):
 
 
 def run_step2(data):
-    from steps import step2
-
     if data is None:
         data = gio.step2_input()
     result = step2.step2(data)
@@ -105,8 +106,6 @@ def run_step2(data):
 
 
 def run_step3(data):
-    from steps import step3
-
     if data is None:
         data = gio.step3_input()
     result = step3.step3(data)
@@ -123,8 +122,6 @@ def run_step3c(data):
 
 
 def run_step4(data):
-    from steps import step4
-
     # Unlike earlier steps, Step 4 always gets input data, ocean
     # temperatures, from disk; data from earlier stages is land data and
     # is zipped up.
@@ -134,8 +131,6 @@ def run_step4(data):
 
 
 def run_step5(data):
-    from steps import step5
-
     # Step 5 takes a land mask as optional input, this is all handled in
     # the step5_input() function.
     data = gio.step5_input(data)
@@ -170,11 +165,8 @@ def parse_steps(steps):
 
 
 def parse_options(arglist):
-    import optparse
-
     usage = "usage: %prog [options]"
     parser = optparse.OptionParser(usage)
-
     parser.add_option(
         "-s",
         "--steps",
@@ -201,7 +193,6 @@ def parse_options(arglist):
     options, args = parser.parse_args(arglist)
     if len(args) != 0:
         parser.error("Unexpected arguments")
-
     options.steps = parse_steps(options.steps)
 
     return options, args
@@ -213,8 +204,6 @@ def update_parameters(parm):
 
     if not parm:
         return
-
-    import parameters
 
     for p in parm:
         try:
@@ -245,16 +234,11 @@ def update_parameters(parm):
 
 # Download input files
 def dl_input_files():
-    import fetch
-
     fetcher = fetch.Fetcher()
     fetcher.fetch()
 
 
 def main(argv=None):
-    import time
-    import os
-
     if argv is None:
         argv = sys.argv
     options, args = parse_options(argv[1:])

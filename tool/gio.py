@@ -20,13 +20,14 @@ import math
 import re
 import struct
 import csv
-
 import warnings
-
 import fort
 import numpy as np
-
 import parameters
+import sys
+import gzip
+import parameters
+
 from settings import *
 from steps import giss_data
 
@@ -95,12 +96,9 @@ def open_or_uncompress(filename):
         # "foo".  In order to maintain this pretence, we have to get
         # the exception info and save it. See
         # http://blog.ianbicking.org/2007/09/12/re-raising-exceptions/
-        import sys
 
         exception = sys.exc_info()
         try:
-            import gzip
-
             return gzip.open(filename + ".gz")
         except IOError:
             pass
@@ -309,10 +307,8 @@ class SubboxReaderNpz(object):
             else:
                 celltype = "C"
         self.celltype = celltype
+
         # Synthesize a gridding radius by parsing it out of the title.
-
-        import parameters
-
         radius = getattr(parameters, "gridding_radius")
         self.meta.gridding_radius = radius
 

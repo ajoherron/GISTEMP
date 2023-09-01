@@ -18,6 +18,7 @@ from settings import *
 from steps import eqarea, giss_data, series
 from steps.giss_data import valid, MISSING
 from tool import gio
+from steps.step3 import asjson
 
 import os
 
@@ -242,9 +243,6 @@ def subbox_to_box(meta, cells, celltype="BOX"):
         ngood = sum(valid(a) for a in box_series)
 
         yield (box_series, box_weight, ngood, box)
-
-
-from steps.step3 import asjson
 
 
 def whichbox(boxes, cell):

@@ -10,12 +10,12 @@ Python code reproducing the STEP3 part of the GISTEMP algorithm.
 """
 
 import math
-
 import parameters
+import sys
 from steps import eqarea, giss_data, series
 from steps.giss_data import MISSING, valid
-
 from settings import *
+from steps import earth  # Clear Climate Code, required for radius.
 
 log = open(os.path.join(LOG_DIR, "step3.log"), "w")
 
@@ -83,17 +83,13 @@ def iter_subbox_grid(station_records, max_months, first_year, radius):
     is the combining radius in kilometres.
     """
 
-    # Clear Climate Code
-    from steps import earth  # required for radius.
-
     # Convert to list because we re-use it for each box (region).
     station_records = list(station_records)
 
     # Descending sort by number of good records.
     station_records = sorted(station_records, key=lambda x: x.good_count, reverse=True)
-    # A dribble of progress messages.
-    import sys
 
+    # A dribble of progress messages.
     dribble = sys.stdout
     progress = open(PROGRESS_DIR + "progress.txt", "a")
     progress.write("COMPUTING 80 REGIONS from 8000 SUBBOXES:")

@@ -10,6 +10,10 @@ grid YYYY-MM [v2-file]
 Display gridded anomalies as SVG file.
 """
 
+import re
+import sys
+import math
+
 # Regular expression used to match/validate the "when" argument.
 RE_WHEN = r"(\d{4})-(\d{2})"
 
@@ -17,9 +21,6 @@ RE_WHEN = r"(\d{4})-(\d{2})"
 def map(when, inp, out):
     """Take a cccgistemp subbox file in V2 mean format as *inp* and
     produce an SVG file on *out*."""
-
-    import math
-    import re
 
     out.write(
         """<svg 
@@ -80,9 +81,6 @@ def usage(out):
 
 
 def main(argv=None):
-    import re
-    import sys
-
     if argv is None:
         argv = sys.argv
 
