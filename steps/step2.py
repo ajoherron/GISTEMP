@@ -15,14 +15,18 @@ Additionally in this step, all stations with short records are discarded
 (prior to any other processing).
 """
 
+# Standard library imports
 import math
 import re
+import os
+
+# Local imports
 import parameters
+import settings
 from steps import earth, giss_data
 from steps.giss_data import valid, invalid, MISSING
-from settings import *
 
-log = open(os.path.join(LOG_DIR, "step2.log"), "w")
+log = open(os.path.join(settings.LOG_DIR, "step2.log"), "w")
 
 
 def urban_adjustments(record_stream):

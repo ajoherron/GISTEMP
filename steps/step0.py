@@ -8,13 +8,14 @@
 #
 # BSD license, see license.txt
 
-from settings import *
-from tool import generate_brightness
-
 """
 Python code for the STEP0 part of the GISTEMP algorithm: combining
 diverse inputs into a single dataset.
 """
+
+# Local imports
+import settings
+from tool import generate_brightness
 
 
 def earthly(records):
@@ -34,11 +35,11 @@ def earthly(records):
 
 def append_scar():
     scar_data = (
-        open(INPUT_DIR + "antarc1.list").readlines()
-        + open(INPUT_DIR + "antarc2.list").readlines()
-        + open(INPUT_DIR + "antarc3.list").readlines()
+        open(settings.INPUT_DIR + "antarc1.list").readlines()
+        + open(settings.INPUT_DIR + "antarc2.list").readlines()
+        + open(settings.INPUT_DIR + "antarc3.list").readlines()
     )
-    with open(INPUT_DIR + "v4.inv", "a") as file:
+    with open(settings.INPUT_DIR + "v4.inv", "a") as file:
         for station in scar_data:
             id = station[:11].strip()
             name = station[12:41]
@@ -56,7 +57,7 @@ def step0(input):
     (typically, this input object is made by the tool.io.step0_input()
     function).
     """
-    if len(open(INPUT_DIR + "v4.inv", "r").readlines()[0].split()) > 5:
+    if len(open(settings.INPUT_DIR + "v4.inv", "r").readlines()[0].split()) > 5:
         pass
     else:
         # append scar data to inv file

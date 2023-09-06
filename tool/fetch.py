@@ -82,23 +82,23 @@ The config file syntax is as follows:
     The default group name is the empty string.
 """
 
+# Standard library imports
 import getopt  # http://www.python.org/doc/2.4.4/lib/module-getopt.html
 import sys  # http://www.python.org/doc/2.4.4/lib/module-sys.html
-import urllib.request  # https://docs.python.org/2.6/library/urllib2.html
+import urllib
 import ssl
 import itertools
 import re
 import tarfile
 import zipfile
 import datetime
-import urllib.request as urllib
-import ssl
 import os
 import ftplib  # http://www.python.org/doc/2.4.4/lib/module-ftplib.html
 import gzip
 import shutil
 
-from settings import *
+# Local imports
+import settings
 
 
 class Fetcher(object):
@@ -106,8 +106,10 @@ class Fetcher(object):
         self.force = kwargs.pop("force", False)
         self.output = kwargs.pop("output", sys.stdout)
         self.output.write("Fetching Input Files:\n")
-        self.prefix = kwargs.pop("prefix", INPUT_DIR)
-        self.config_file = kwargs.pop("config_file", SOURCES_DIR + "sources.txt")
+        self.prefix = kwargs.pop("prefix", settings.INPUT_DIR)
+        self.config_file = kwargs.pop(
+            "config_file", settings.SOURCES_DIR + "sources.txt"
+        )
         self.requests = kwargs.pop("requests", None)
 
     def fetch(self):
@@ -115,7 +117,7 @@ class Fetcher(object):
         for url, local in files:
             # first, check if ghcn file exists
             if "ghcnm.tavg.qcf.dat" in url:
-                if not os.path.exists(INPUT_DIR + "ghcnm.tavg.qcf.dat"):
+                if not os.path.exists(settings.INPUT_DIR + "ghcnm.tavg.qcf.dat"):
                     self.get_ghcn_file(url)
             else:
                 self.fetch_one(url, local)
@@ -127,13 +129,13 @@ class Fetcher(object):
     def get_ghcn_file(self, url):
         public_dir = url.replace("ghcnm.tavg.qcf.dat", "")
         context = ssl._create_unverified_context()
-        response = urllib.urlopen(public_dir, context=context)
+        response = urllib.request.urlopen(public_dir, context=context)
         html = response.read().decode()
         filenames = re.findall(r'href=[\'"]?([^\'" >]+)', html)
         ghcn_filenames = [x for x in filenames if x[-4:] == ".dat" and "v4" in x]
         last_modifieds = []
         for file in ghcn_filenames:
-            conn = urllib.urlopen(public_dir + file, context=context)
+            conn = urllib.request.urlopen(public_dir + file, context=context)
             last_modified = conn.headers["last-modified"]
             last_modified = datetime.datetime.strptime(
                 last_modified[5:-4], "%d %b %Y %H:%M:%S"
@@ -146,8 +148,8 @@ class Fetcher(object):
         else:
             qcf_file = recent_ghcn[1]
         print(qcf_file)
-        qcf = urllib.urlopen(url=public_dir + qcf_file, context=context)
-        f = open(INPUT_DIR + "ghcnm.tavg.qcf.dat", "w")
+        qcf = urllib.request.urlopen(url=public_dir + qcf_file, context=context)
+        f = open(settings.INPUT_DIR + "ghcnm.tavg.qcf.dat", "w")
         content = qcf.read().decode()
         f.write(content)
         f.close()

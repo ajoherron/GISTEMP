@@ -9,15 +9,19 @@
 Python code reproducing the STEP3 part of the GISTEMP algorithm.
 """
 
+# Standard library imports
 import math
-import parameters
 import sys
+import os
+
+# Local imports
+import parameters
+import settings
 from steps import eqarea, giss_data, series
 from steps.giss_data import MISSING, valid
-from settings import *
 from steps import earth  # Clear Climate Code, required for radius.
 
-log = open(os.path.join(LOG_DIR, "step3.log"), "w")
+log = open(os.path.join(settings.LOG_DIR, "step3.log"), "w")
 
 
 def incircle(iterable, arc, lat, lon):
@@ -92,7 +96,7 @@ def iter_subbox_grid(station_records, max_months, first_year, radius):
 
     # A dribble of progress messages.
     dribble = sys.stdout
-    progress = open(PROGRESS_DIR + "progress.txt", "a")
+    progress = open(settings.PROGRESS_DIR + "progress.txt", "a")
     progress.write("COMPUTING 80 REGIONS from 8000 SUBBOXES:")
 
     # Critical radius as an angle of arc

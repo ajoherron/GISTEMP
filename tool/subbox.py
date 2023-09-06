@@ -39,22 +39,22 @@ When converting a step5mask file the output is white for 0.000 (no land)
 and black for 1.000 (use land).
 """
 
+# Standard library imports
 import csv
 import itertools  # http://docs.python.org/release/2.4.4/lib/module-itertools.html
 import math
-import gio
 import sys
-import math
-import png
 import getopt
+
+# 3rd-party library imports
+import png
 import trend
 
-# Clear Climate Code
-from code import eqarea
+# Local imports
+import gio
+from code import eqarea  # Clear Climate Code
 from code.giss_data import MISSING
-
-# :todo: move into proper module.
-from landmask import centrein
+from landmask import centrein  # :todo: move into proper module.
 
 
 def to_polar_svg(inp, date=None, inv=None, lat=None, trend=False):

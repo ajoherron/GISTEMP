@@ -13,16 +13,19 @@ combined with land data; boxes are combined into latitudinal zones
 (including hemispheric and global zones); annual and seasonal anomalies
 are computed from monthly anomalies.
 """
-import parameters
-from settings import *
-from steps import eqarea, giss_data, series
-from steps.giss_data import valid, MISSING
-from tool import gio
-from steps.step3 import asjson
 
+# Standard library imports
 import os
 
-log = open(os.path.join(LOG_DIR, "step5.log"), "w")
+# Local imports
+import parameters
+import settings
+from tool import gio
+from steps import eqarea, giss_data, series
+from steps.giss_data import valid, MISSING
+from steps.step3 import asjson
+
+log = open(os.path.join(settings.LOG_DIR, "step5.log"), "w")
 
 
 def as_boxes(data):
@@ -53,7 +56,10 @@ def land_ocean_boxes(meta, cells):
     end_year = ocean_meta.title.decode().strip()[-4:]
 
     land_file = open(
-        RESULT_DIR + "GHCNv4BoxesLand." + str(int(land_meta.gridding_radius)) + ".txt",
+        settings.RESULT_DIR
+        + "GHCNv4BoxesLand."
+        + str(int(land_meta.gridding_radius))
+        + ".txt",
         "w",
     )
     print("GHCNv3 Temperature Anomalies (C) Land Only", file=land_file)

@@ -7,6 +7,7 @@ be opened using the open method of this module; a File object is
 returned that supports a writeline method (for writing records), a readline
 method (for reading records) and the iterator protocol (for reading)."""
 
+# Standard library imports
 import struct
 
 

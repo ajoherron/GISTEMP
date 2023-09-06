@@ -1,14 +1,17 @@
-from settings import *
+# Standard library imports
 import os
+
+# Local imports
+import settings
 
 
 # This method is used to generate the nigh time brightness index.
 # It expects wrld-rad.data.txt and v4.inv to be in the /tmp/input dir.
 # The resulting file v4.inv will be placed in the /tmp/input dir as well.
 def run():
-    night_file = open(INPUT_DIR + "wrld-rad.data.txt", "r")
-    inv_file = open(INPUT_DIR + "v4.inv", "r")
-    new_inv = open(INPUT_DIR + "v4_tmp.inv", "w+")
+    night_file = open(settings.INPUT_DIR + "wrld-rad.data.txt", "r")
+    inv_file = open(settings.INPUT_DIR + "v4.inv", "r")
+    new_inv = open(settings.INPUT_DIR + "v4_tmp.inv", "w+")
     i_j_dict = {}
     for line in night_file:
         line = line.split()
@@ -37,5 +40,5 @@ def run():
             new_inv.write(line.replace("\n", " " + "0" + "     " + "\n"))
     inv_file.close()
     new_inv.close()
-    os.remove(INPUT_DIR + "v4.inv")
-    os.rename(INPUT_DIR + "v4_tmp.inv", INPUT_DIR + "v4.inv")
+    os.remove(settings.INPUT_DIR + "v4.inv")
+    os.rename(settings.INPUT_DIR + "v4_tmp.inv", settings.INPUT_DIR + "v4.inv")

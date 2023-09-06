@@ -19,8 +19,8 @@ Requires this file from GISTEMP STEP0/input_files/:
 Ts.strange.v4.list.IN_full
 """
 
-# Clear Climate Code
-from steps import read_config
+# Local imports
+from steps import read_config  # Clear Climate Code
 from steps.giss_data import MISSING, BASE_YEAR
 
 

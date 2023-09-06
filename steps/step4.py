@@ -6,8 +6,9 @@
 sea-surface temperature anomaly boxed dataset.
 """
 
-from tool import gio
+# Local imports
 import parameters
+from tool import gio
 from steps.giss_data import MISSING, invalid
 
 IYRBEG = 1880  # first year

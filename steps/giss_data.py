@@ -23,8 +23,11 @@ the `StationMetaData` and `SubboxMetaData` classes.
 
 """
 
+# Standard library imports
 import sys
 import time  # http://docs.python.org/release/2.4.4/lib/module-time.html
+
+# Local imports
 from steps import eqarea
 
 #: The base year for time series data. Data before this time is not

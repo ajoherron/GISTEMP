@@ -13,7 +13,8 @@ GISS GISTEMP.
 Some of these file formats are peculiar to GISS, others are defined and
 used by other bodies (such as NOAA's v2.mean format).
 """
-# Clear Climate Code
+# Standard library imports
+import os
 import copy
 import itertools
 import math
@@ -21,14 +22,16 @@ import re
 import struct
 import csv
 import warnings
-import fort
-import numpy as np
-import parameters
 import sys
 import gzip
-import parameters
 
-from settings import *
+# 3rd-party library imports
+import fort
+import numpy as np
+
+# Local imports
+import parameters
+import settings
 from steps import giss_data
 
 #: Integer code used to indicate missing data.
@@ -832,7 +835,7 @@ def read_generic_v3(name):
     metadata.
     """
 
-    filename = os.path.join(BASE_PATH + "input", name)
+    filename = os.path.join(settings.BASE_PATH + "input", name)
     if not name.endswith(".dat"):
         raise Exception(
             "Don't know where to look for .inv file for GHCN-M v2 format file: %r"
@@ -845,7 +848,7 @@ def read_generic_v3(name):
         element = None
 
     invfile = name[:-4] + ".inv"
-    invfile = os.path.join(BASE_PATH + "input", invfile)
+    invfile = os.path.join(settings.BASE_PATH + "input", invfile)
     return GHCNV4Reader(
         file=open(filename),
         meta=augmented_station_metadata(invfile, format="v3"),
@@ -879,7 +882,7 @@ def v3meta():
 
     global _v3meta
 
-    v3inv = os.path.join(INPUT_DIR, "v4.inv")
+    v3inv = os.path.join(settings.INPUT_DIR, "v4.inv")
     if not _v3meta:
         _v3meta = augmented_station_metadata(v3inv, format="giss_v4")
     return _v3meta
@@ -911,14 +914,14 @@ class Input:
         iterator."""
         if source == "ghcn" or re.match("ghcnm.(tavg|tmax|tmin)", source):
             if source == "ghcn":
-                ghcn4file = INPUT_DIR + "ghcnm.tavg.qcf.dat"
+                ghcn4file = settings.INPUT_DIR + "ghcnm.tavg.qcf.dat"
             else:
                 if source.endswith(".dat"):
                     pass
                 else:
                     source += ".qca.dat"
-                ghcn4file = os.path.join(INPUT_DIR, source)
-            invfile = INPUT_DIR + "v4.inv"
+                ghcn4file = os.path.join(settings.INPUT_DIR, source)
+            invfile = settings.INPUT_DIR + "v4.inv"
 
             return GHCNV4Reader(
                 file=open(ghcn4file),
@@ -928,22 +931,22 @@ class Input:
         if source == "scar":
             return itertools.chain(
                 read_antarctic(
-                    INPUT_DIR + "antarc1.txt",
-                    INPUT_DIR + "antarc1.list",
+                    settings.INPUT_DIR + "antarc1.txt",
+                    settings.INPUT_DIR + "antarc1.list",
                     "8",
                     meta=v3meta(),
                     year_min=giss_data.BASE_YEAR,
                 ),
                 read_antarctic(
-                    INPUT_DIR + "antarc3.txt",
-                    INPUT_DIR + "antarc3.list",
+                    settings.INPUT_DIR + "antarc3.txt",
+                    settings.INPUT_DIR + "antarc3.list",
                     "9",
                     meta=v3meta(),
                     year_min=giss_data.BASE_YEAR,
                 ),
                 read_australia(
-                    INPUT_DIR + "antarc2.txt",
-                    INPUT_DIR + "antarc2.list",
+                    settings.INPUT_DIR + "antarc2.txt",
+                    settings.INPUT_DIR + "antarc2.list",
                     "7",
                     meta=v3meta(),
                     year_min=giss_data.BASE_YEAR,
@@ -980,14 +983,14 @@ def generic_output_step(n):
 
     def output(data):
         writer, ext = choose_writer()
-        path = os.path.join(WORK_DIR, "step%d.%s" % (n, ext))
+        path = os.path.join(settings.WORK_DIR, "step%d.%s" % (n, ext))
         out = writer(path=path)
         for thing in data:
             out.write(thing)
             yield thing
         print("Step %d: closing output file." % n)
         out.close()
-        progress = open(PROGRESS_DIR + "progress.txt", "a")
+        progress = open(settings.PROGRESS_DIR + "progress.txt", "a")
         progress.write("\nStep %d: closing output file.\n" % n)
 
     return output
@@ -998,7 +1001,7 @@ step0_output = generic_output_step(0)
 
 def step1_input():
     return GHCNV4Reader(
-        WORK_DIR + "step0.v4", meta=v3meta(), year_min=giss_data.BASE_YEAR
+        settings.WORK_DIR + "step0.v4", meta=v3meta(), year_min=giss_data.BASE_YEAR
     )
 
 
@@ -1006,23 +1009,23 @@ step1_output = generic_output_step(1)
 
 
 def step2_input():
-    return GHCNV4Reader(WORK_DIR + "step1.v4", meta=v3meta())
+    return GHCNV4Reader(settings.WORK_DIR + "step1.v4", meta=v3meta())
 
 
 step2_output = generic_output_step(2)
 
 
 def step3_input():
-    return GHCNV4Reader(WORK_DIR + "step2.v4", meta=v3meta())
+    return GHCNV4Reader(settings.WORK_DIR + "step2.v4", meta=v3meta())
 
 
-STEP3_OUT = os.path.join(RESULT_DIR, "SBBX1880.Ts.GHCN.CL.PA.1200")
+STEP3_OUT = os.path.join(settings.RESULT_DIR, "SBBX1880.Ts.GHCN.CL.PA.1200")
 
 
 def step3_output(data):
     out = SubboxWriter(STEP3_OUT)
     writer, ext = choose_writer()
-    textout = writer(path=(WORK_DIR + "step3.%s" % ext), scale=0.01)
+    textout = writer(path=(settings.WORK_DIR + "step3.%s" % ext), scale=0.01)
     gotmeta = False
     for thing in data:
         out.write(thing)
@@ -1034,7 +1037,7 @@ def step3_output(data):
     print("Step 3: closing output file")
     out.close()
     textout.close()
-    progress = open(PROGRESS_DIR + "progress.txt", "a")
+    progress = open(settings.PROGRESS_DIR + "progress.txt", "a")
     progress.write("\nStep3: closing output file\n")
 
 
@@ -1063,7 +1066,7 @@ def make_3d_array(a, b, c):
 def step4_find_monthlies(latest_year, latest_month):
     dates = {}
     filename_re = re.compile("^oiv2mon\.([0-9][0-9][0-9][0-9])([0-9][0-9])(\.gz)?$")
-    for f in os.listdir(INPUT_DIR):
+    for f in os.listdir(settings.INPUT_DIR):
         m = filename_re.match(f)
         if m:
             year = int(m.group(1))
@@ -1140,7 +1143,7 @@ def find_ocean_file():
     """
 
     source = parameters.ocean_source.upper()
-    dir = INPUT_DIR
+    dir = settings.INPUT_DIR
     for name in os.listdir(dir):
         if name.upper() == "SBBX." + source:
             return os.path.join(dir, name)
@@ -1174,14 +1177,14 @@ def step4_output(data):
     # We only want to write the records from the right-hand item (the
     # ocean data).  The left-hand items are land data, already written
     # by Step 3.
-    out = SubboxWriter(RESULT_DIR + "SBBX.SST")
+    out = SubboxWriter(settings.RESULT_DIR + "SBBX.SST")
     for land, ocean in data:
         out.write(ocean)
         yield land, ocean
     # np.savez_compressed(out.file, *out.result, meta=out.meta)
     print("Step4: closing output file")
     out.close()
-    progress = open(PROGRESS_DIR + "progress.txt", "a")
+    progress = open(settings.PROGRESS_DIR + "progress.txt", "a")
     progress.write("\nStep4: closing output file\n")
 
 
@@ -1189,7 +1192,7 @@ def step5_input(data):
     if not data:
         land = SubboxReaderNpz(STEP3_OUT)
         try:
-            ocean = SubboxReaderNpz(RESULT_DIR + "SBBX.SST")
+            ocean = SubboxReaderNpz(settings.RESULT_DIR + "SBBX.SST")
             ocean.meta.ocean_source = parameters.ocean_source
         except IOError:
             data = ensure_landocean(iter(land))
@@ -1200,7 +1203,7 @@ def step5_input(data):
 
     # Add optional mask.
     try:
-        p = os.path.join(BASE_PATH + "input", "step5mask")
+        p = os.path.join(settings.BASE_PATH + "input", "step5mask")
         mask = open(p)
         print("Using mask from", p)
     except IOError:
@@ -1282,7 +1285,9 @@ def step5_bx_output(meta, data):
     # Usually one of 'land', 'ocean', 'mixed'.
     mode = meta.mode
     result = []
-    boxf = open(os.path.join(RESULT_DIR, make_filename(meta, "BX") + ".npz"), "wb")
+    boxf = open(
+        os.path.join(settings.RESULT_DIR, make_filename(meta, "BX") + ".npz"), "wb"
+    )
     info = info_from_meta(meta)
     info.append(title)
     info = np.array(info, dtype=object)
@@ -1296,7 +1301,7 @@ def step5_bx_output(meta, data):
     # np.savez_compressed(boxf, *result, meta=info)
     print("Step 5: Closing box file:", boxf.name)
     boxf.close()
-    progress = open(PROGRESS_DIR + "progress.txt", "a")
+    progress = open(settings.PROGRESS_DIR + "progress.txt", "a")
     progress.write("\nStep 5: Closing box file:" + boxf.name + "\n")
 
 
@@ -1364,7 +1369,7 @@ def step5_mask_output(data):
     # metadata
     yield next(data)
 
-    out = open(os.path.join(WORK_DIR, "step5mask"), "w")
+    out = open(os.path.join(settings.WORK_DIR, "step5mask"), "w")
 
     for datum in data:
         mask, land, ocean = datum
@@ -1449,7 +1454,7 @@ def step5_output(results):
 
 def to_csv(filenames=""):
     for filename in filenames:
-        create_csv(RESULT_DIR + filename)
+        create_csv(settings.RESULT_DIR + filename)
 
 
 def create_csv(dir_name, txt_title=""):
@@ -1761,7 +1766,9 @@ Year  Glob  NHem  SHem    -90N  -24N  -24S    -90N  -64N  -44N  -24N  -EQU  -24S
             )
 
     # Save monthly means on disk.
-    zono = open(os.path.join(RESULT_DIR, make_filename(meta, "ZON") + ".npz"), "wb")
+    zono = open(
+        os.path.join(settings.RESULT_DIR, make_filename(meta, "ZON") + ".npz"), "wb"
+    )
     result = []
 
     titl2 = titl2.encode()
@@ -1785,7 +1792,9 @@ def open_step5_outputs(meta, mode):
 
     parts = ["ZonAnn", "GLB", "NH", "SH"]
     files = [
-        open(os.path.join(RESULT_DIR, make_text_filename(meta, mode, part)), "w")
+        open(
+            os.path.join(settings.RESULT_DIR, make_text_filename(meta, mode, part)), "w"
+        )
         for part in parts
     ]
     return files

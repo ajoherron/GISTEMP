@@ -10,6 +10,7 @@ grid YYYY-MM [v2-file]
 Display gridded anomalies as SVG file.
 """
 
+# Standard library imports
 import re
 import sys
 import math

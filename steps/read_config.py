@@ -5,12 +5,13 @@
 # Nick Barnes, Ravenbrook Limited, 2010-01-16
 # Avi Persin, Revision 2016-01-06
 
-from settings import *
-
 """
 Python code to read the various config and station files used by
 GISTEMP:
 """
+
+# Local imports
+import settings
 
 
 def get_changes_dict():
@@ -25,7 +26,7 @@ def get_changes_dict():
     """
 
     dict = {}
-    for line in open(INPUT_DIR + "Ts.strange.v4.list.IN_full", "r"):
+    for line in open(settings.INPUT_DIR + "Ts.strange.v4.list.IN_full", "r"):
         split_line = line.split()
         id = split_line[0]
         try:

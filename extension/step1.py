@@ -18,9 +18,11 @@ This behaviour was rendered redundant by the adoption in GISTEMP v3
 of GHCN-M 3 as a source dataset.
 """
 
+# Standard library imports
 import math
 import itertools
 
+# Local imports
 import parameters
 from steps import read_config
 from steps import series

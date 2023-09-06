@@ -5,11 +5,12 @@
 # Nick Barnes, Ravenbrook Limited, 2010-03-08
 # Avi Persin, Revision 2016-01-06
 
-from steps.giss_data import valid, invalid, MISSING
-
 """
 Shared series-processing code in the GISTEMP algorithm.
 """
+
+# Local imports
+from steps.giss_data import valid, invalid, MISSING
 
 
 def combine(composite, weight, new, new_weight, min_overlap):

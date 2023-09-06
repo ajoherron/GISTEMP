@@ -14,20 +14,21 @@ Options:
                   If this option is omitted, run all steps in order.
 """
 
+# Standard library imports
 import os  # http://www.python.org/doc/2.4.4/lib/module-os.html
 import re  # http://docs.python.org/release/2.4.4/lib/module-re.html
 import sys  # http://www.python.org/doc/2.4.4/lib/module-sys.html
 import optparse
+import time
+
+# Local imports
 import parameters
 import fetch
-import time
-import os
 import gio  # Clear Climate Code
-
-from settings import *
+import settings
+from extension import step1 as estep1
 from steps import step0
 from steps import step1
-from extension import step1 as estep1
 from steps import step2
 from steps import step3
 from steps import step4
@@ -61,7 +62,7 @@ logfile = sys.stdout
 
 def log(msg):
     print(msg, file=logfile)
-    progress = open(PROGRESS_DIR + "progress.txt", "a")
+    progress = open(settings.PROGRESS_DIR + "progress.txt", "a")
     progress.write(msg + "\n\n")
     progress.flush()
 
@@ -247,14 +248,14 @@ def main(argv=None):
     step_list = list(options.steps)
 
     # overwrite progress popup
-    if not os.path.exists(PROGRESS_DIR):
-        os.makedirs(PROGRESS_DIR)
-    progress = open(PROGRESS_DIR + "progress.txt", "w")
+    if not os.path.exists(settings.PROGRESS_DIR):
+        os.makedirs(settings.PROGRESS_DIR)
+    progress = open(settings.PROGRESS_DIR + "progress.txt", "w")
     progress.write("Setting up parameters...\n\n")
 
     # Create all the temporary directories we're going to use.
     for d in ["log", "result", "work", "input"]:
-        mkdir(TMP_DIR + "/" + d)
+        mkdir(settings.TMP_DIR + "/" + d)
 
     # delete files in /tmp/input to re-download the input data files
     # otherwise the files in /tmp/input will be used.

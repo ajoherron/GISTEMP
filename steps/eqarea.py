@@ -15,10 +15,13 @@ sequence types, such as lists.  Duck typing rules.
 
 """
 
+# Standard library imports
 import itertools  # http://www.python.org/doc/2.3.5/lib/module-itertools.html
 import math
 import sys
 import doctest  # http://www.python.org/doc/2.3.5/lib/module-doctest.html
+
+# Local imports
 import eqarea
 
 #: Array of band altitudes.
