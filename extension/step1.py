@@ -36,9 +36,9 @@ def step1_adjust():
     By convention the month is 1 for January."""
 
     adjust = {}
-    for line in open('config/step1_adjust', 'r'):
-        line = line.split('#')[0].strip()
-        if line == '':
+    for line in open("config/step1_adjust", "r"):
+        line = line.split("#")[0].strip()
+        if line == "":
             continue
         id, _, year, month, summand = line.split()
         adjust[id] = (int(year), int(month), float(summand))
@@ -84,7 +84,7 @@ def do_combine(stream, log, select_func, combine_func):
 
     """
     for id11, record_set in itertools.groupby(stream, lambda r: r.station_uid):
-        log.write('%s\n' % id11)
+        log.write("%s\n" % id11)
         records = set()
         for record in record_set:
             records.add(record)
@@ -103,9 +103,15 @@ def do_combine(stream, log, select_func, combine_func):
             record = select_func(records)
             records.remove(record)
             sums, wgts = fresh_arrays(record, years)
-            log.write("\t%s %s %s -- %s\n" % (record.uid,
-                                              record.first_valid_year(), record.last_valid_year(),
-                                              record.source))
+            log.write(
+                "\t%s %s %s -- %s\n"
+                % (
+                    record.uid,
+                    record.first_valid_year(),
+                    record.last_valid_year(),
+                    record.source,
+                )
+            )
             combine_func(sums, wgts, begin, records, log, record.uid)
             final_data = average(sums, wgts)
             record.set_series(begin * 12 + 1, final_data)
@@ -114,16 +120,16 @@ def do_combine(stream, log, select_func, combine_func):
 
 def combine(sums, wgts, begin, records, log):
     while records:
-        record, diff, overlap = get_longest_overlap(average(sums, wgts),
-                                                    begin, records)
+        record, diff, overlap = get_longest_overlap(average(sums, wgts), begin, records)
         if overlap < parameters.station_combine_min_overlap:
             log.write("\tno other records okay\n")
             return
         records.remove(record)
         offset_and_add(sums, wgts, diff, record)
-        log.write("\t %s %d %d %f\n" % (record.uid,
-                                        record.first_valid_year(),
-                                        record.last_valid_year(), diff))
+        log.write(
+            "\t %s %d %d %f\n"
+            % (record.uid, record.first_valid_year(), record.last_valid_year(), diff)
+        )
 
 
 def get_best(records):
@@ -134,7 +140,7 @@ def get_best(records):
     (this is passed to do_combine() as a select_func argument)
     """
 
-    ranks = {'MCDW': 4, 'USHCN2': 3, 'SUMOFDAY': 2, 'UNKNOWN': 1}
+    ranks = {"MCDW": 4, "USHCN2": 3, "SUMOFDAY": 2, "UNKNOWN": 1}
     best = 1
     longest = 0
     for record in sorted(records, key=lambda r: r.uid):
@@ -158,11 +164,13 @@ def pieces_combine(sums, wgts, begin, records, log, new_id):
     """
 
     while records:
-        record, diff_, overlap_ = get_longest_overlap(average(sums, wgts),
-                                                      begin, records)
-        log.write("\t %s %d %d\n" % (record.uid,
-                                     record.first_valid_year(),
-                                     record.last_valid_year()))
+        record, diff_, overlap_ = get_longest_overlap(
+            average(sums, wgts), begin, records
+        )
+        log.write(
+            "\t %s %d %d\n"
+            % (record.uid, record.first_valid_year(), record.last_valid_year())
+        )
 
         is_okay = find_quintuples(sums, wgts, record, new_id, log)
 
@@ -218,8 +226,8 @@ def find_quintuples(sums, wgts, record, new_id, log):
     min_end = min(actual_end, rec_end)
     # Since max_begin and min_end are integers, this rounds fractional
     # middle years up.
-    middle_year = int(.5 * (max_begin + min_end) + 0.5)
-    offset = (middle_year - record.first_year)
+    middle_year = int(0.5 * (max_begin + min_end) + 0.5)
+    offset = middle_year - record.first_year
     log.write("max begin: %s\tmin end: %s\n" % (max_begin, min_end))
 
     new_data = average(sums, wgts)
@@ -245,14 +253,18 @@ def find_quintuples(sums, wgts, record, new_id, log):
         limit = offset + rad + 1
         new_middle = [x for x in new_ann_anoms[base:limit] if valid(x)]
         rec_middle = [x for x in rec_ann_anoms[base:limit] if valid(x)]
-        if (len(new_middle) >= parameters.station_combine_min_mid_years
-            and len(rec_middle) >= parameters.station_combine_min_mid_years):
+        if (
+            len(new_middle) >= parameters.station_combine_min_mid_years
+            and len(rec_middle) >= parameters.station_combine_min_mid_years
+        ):
             log.write("overlap success: %s\n" % logid)
             ov_success = True
             avg1 = sum(anom + new_ann_mean for anom in new_middle) / float(
-                    len(new_middle))
+                len(new_middle)
+            )
             avg2 = sum(anom + rec_ann_mean for anom in rec_middle) / float(
-                    len(rec_middle))
+                len(rec_middle)
+            )
             diff = abs(avg1 - avg2)
             log.write("diff = %s\n" % diff)
             if diff < ann_std_dev:
@@ -277,7 +289,7 @@ def get_actual_endpoints(wgts, begin):
     y_min = 9999
     y_max = 0
     for i in range(0, len(wgts), 12):
-        if sum(wgts[i:i + 12]) > 0:
+        if sum(wgts[i : i + 12]) > 0:
             y = i // 12
             y_min = min(y_min, y)
             y_max = max(y_max, y)
@@ -370,7 +382,7 @@ def get_longest_overlap(target, begin, records):
     (positive when *record* is higher); *overlap* is the number of years
     in the overlap.  Even when there is no overlap _some_ record is
     returned and in that case *diff* is None and *overlap* is 0.
-    
+
     Like other functions, assumes (and asserts) that *begin* is
     the first year for all the records.
     """
@@ -386,15 +398,18 @@ def get_longest_overlap(target, begin, records):
     # temporary dict.
     t = dict((record.uid, record) for record in records)
     for record in t.values():
-        common = [(rec_anom, anom)
-                  for rec_anom, anom in zip(record.ann_anoms, anoms)
-                  if valid(rec_anom) and valid(anom)]
+        common = [
+            (rec_anom, anom)
+            for rec_anom, anom in zip(record.ann_anoms, anoms)
+            if valid(rec_anom) and valid(anom)
+        ]
         if len(common) < overlap:
             continue
         overlap = len(common)
         best_record = record
-        s = sum((record.ann_mean + rec_anom) - (mean + anom)
-                for rec_anom, anom in common)
+        s = sum(
+            (record.ann_mean + rec_anom) - (mean + anom) for rec_anom, anom in common
+        )
         if common:
             diff = s / len(common)
     return best_record, diff, overlap
@@ -436,8 +451,8 @@ def pre_step1(records):
     if parameters.combine_records:
         print("Extension: combine and adjust records (old GISTEMP step 1).")
         global comb_log, pieces_log
-        comb_log = open('log/comb.log', 'w')
-        pieces_log = open('log/pieces.log', 'w')
+        comb_log = open("log/comb.log", "w")
+        pieces_log = open("log/pieces.log", "w")
         combined = comb_records(records)
         adjusted = adjust_discont(combined)
         records = comb_pieces(adjusted)

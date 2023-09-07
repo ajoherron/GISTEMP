@@ -11,7 +11,7 @@ Display gridded anomalies as SVG file.
 """
 
 # Regular expression used to match/validate the "when" argument.
-RE_WHEN = r'(\d{4})-(\d{2})'
+RE_WHEN = r"(\d{4})-(\d{2})"
 
 
 def map(when, inp, out):
@@ -21,10 +21,12 @@ def map(when, inp, out):
     import math
     import re
 
-    out.write("""<svg 
+    out.write(
+        """<svg 
       xmlns="http://www.w3.org/2000/svg"
       xmlns:xlink="http://www.w3.org/1999/xlink"
-      version="1.1">\n""")
+      version="1.1">\n"""
+    )
 
     m = re.match(RE_WHEN, when)
     year, month = m.groups()
@@ -37,19 +39,20 @@ def map(when, inp, out):
         x, y = topixel(lat, lon)
         y = -y
         if v > 0:
-            fill = 'red'
+            fill = "red"
         else:
-            fill = 'blue'
+            fill = "blue"
         radius_scale = 0.25
         r = math.sqrt(abs(v)) * radius_scale
-        out.write("""<circle cx='%.1f' cy='%.1f' r='%.1f' fill='%s' />\n""" %
-                  (x, y, r, fill))
-    out.write('</g>\n')
+        out.write(
+            """<circle cx='%.1f' cy='%.1f' r='%.1f' fill='%s' />\n""" % (x, y, r, fill)
+        )
+    out.write("</g>\n")
     out.write("""</svg>\n""")
 
 
 def topixel(lat, lon):
-    u"""Return x,y coordinate.  Plate Carr\xe9e projection."""
+    """Return x,y coordinate.  Plate Carr\xe9e projection."""
 
     return lon, lat
 
@@ -63,7 +66,7 @@ def filter_month(inp, year, month):
 
     for line in inp:
         if line[12:16] == year:
-            v = int(line[16 + 5 * month:21 + 5 * month])
+            v = int(line[16 + 5 * month : 21 + 5 * month])
             if v != -9999:
                 lat = float(line[:5])
                 lon = float(line[5:11])
@@ -79,6 +82,7 @@ def usage(out):
 def main(argv=None):
     import re
     import sys
+
     if argv is None:
         argv = sys.argv
 
@@ -95,5 +99,5 @@ def main(argv=None):
     map(when, f, sys.stdout)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

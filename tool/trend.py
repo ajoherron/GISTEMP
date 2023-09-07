@@ -10,7 +10,7 @@ def lm1(data):
     be None in which case the pair is ignored.
     """
     sxx = sxy = syy = sx = sy = n = 0
-    for (x, y) in data:
+    for x, y in data:
         if y is not None:
             sxx += x * x
             syy += y * y

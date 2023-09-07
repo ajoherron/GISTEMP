@@ -1,5 +1,5 @@
 #!/usr/local/bin/python3.4
-# 
+#
 # run.cgi -- run steps of the GISTEMP algorithm
 #
 # Gareth Rees, 2009-12-08
@@ -16,17 +16,21 @@ Options:
 
 # http://www.python.org/doc/2.4.4/lib/module-os.html
 import os
+
 # http://docs.python.org/release/2.4.4/lib/module-re.html
 import re
+
 # http://www.python.org/doc/2.4.4/lib/module-sys.html
 import sys
 
 try:
     rootdir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     if os.getcwd() != rootdir:
-        print("The GISTEMP procedure must be run from the root "
-              "directory of the project.\nPlease change directory "
-              "to %s and try again." % rootdir)
+        print(
+            "The GISTEMP procedure must be run from the root "
+            "directory of the project.\nPlease change directory "
+            "to %s and try again." % rootdir
+        )
         sys.exit()
 except:
     sys.exit()
@@ -51,8 +55,8 @@ logfile = sys.stdout
 
 def log(msg):
     print(msg, file=logfile)
-    progress = open(PROGRESS_DIR + 'progress.txt', 'a')
-    progress.write(msg + '\n\n')
+    progress = open(PROGRESS_DIR + "progress.txt", "a")
+    progress.write(msg + "\n\n")
     progress.flush()
 
 
@@ -69,8 +73,10 @@ def mkdir(path):
 # are iterators, either produced from the previous step, or an iterator
 # that feeds from a file.
 
+
 def run_step0(data):
     from steps import step0
+
     if data is None:
         data = gio.step0_input()
     result = step0.step0(data)
@@ -118,6 +124,7 @@ def run_step3c(data):
 
 def run_step4(data):
     from steps import step4
+
     # Unlike earlier steps, Step 4 always gets input data, ocean
     # temperatures, from disk; data from earlier stages is land data and
     # is zipped up.
@@ -128,6 +135,7 @@ def run_step4(data):
 
 def run_step5(data):
     from steps import step5
+
     # Step 5 takes a land mask as optional input, this is all handled in
     # the step5_input() function.
     data = gio.step5_input(data)
@@ -141,14 +149,14 @@ def parse_steps(steps):
     if not steps:
         return [str(x) for x in range(6)]
     result = set()
-    for part in steps.split(','):
+    for part in steps.split(","):
         # Part can be integer number with an optional letter suffix...
-        if re.match(r'^\d+[a-z]?$', part):
+        if re.match(r"^\d+[a-z]?$", part):
             result.add(part)
         else:
             # Or a range in the form '1-3'.
             try:
-                l, r = part.split('-')
+                l, r = part.split("-")
                 result.update(str(s) for s in range(int(l), int(r) + 1))
             except ValueError:
                 # Expect to catch both
@@ -167,10 +175,28 @@ def parse_options(arglist):
     usage = "usage: %prog [options]"
     parser = optparse.OptionParser(usage)
 
-    parser.add_option("-s", "--steps", action="store", metavar="S[,S]", default="", help="Select range of steps to run")
-    parser.add_option('-p', '--parameter', action='append', help="Redefine parameter from parameters/*.py during run")
-    parser.add_option("--no-work_files", "--suppress-work-files", action="store_false", default=True, dest="save_work",
-                      help="Do not save intermediate files in the work sub-directory")
+    parser.add_option(
+        "-s",
+        "--steps",
+        action="store",
+        metavar="S[,S]",
+        default="",
+        help="Select range of steps to run",
+    )
+    parser.add_option(
+        "-p",
+        "--parameter",
+        action="append",
+        help="Redefine parameter from parameters/*.py during run",
+    )
+    parser.add_option(
+        "--no-work_files",
+        "--suppress-work-files",
+        action="store_false",
+        default=True,
+        dest="save_work",
+        help="Do not save intermediate files in the work sub-directory",
+    )
 
     options, args = parser.parse_args(arglist)
     if len(args) != 0:
@@ -189,9 +215,10 @@ def update_parameters(parm):
         return
 
     import parameters
+
     for p in parm:
         try:
-            key, value = p.split('=', 1)
+            key, value = p.split("=", 1)
         except ValueError:
             raise Fatal("Can't understand parameter option: %r" % p)
         if not hasattr(parameters, key):
@@ -203,15 +230,14 @@ def update_parameters(parm):
         # ... but we need a hack for bool.
         if type(x) == bool:
             try:
-                value = ['false', 'true'].index(value.lower())
+                value = ["false", "true"].index(value.lower())
             except ValueError:
-                raise Fatal("Boolean parameter %r must be True or False"
-                            % key)
+                raise Fatal("Boolean parameter %r must be True or False" % key)
                 # Now value is 0 or 1 and the default case will correctly
                 # coerce it.
-        elif value[0] == '(' and value[-1] == ')':
+        elif value[0] == "(" and value[-1] == ")":
             value = value[1:-1]
-            value = [int(x) for x in value.split(',')]
+            value = [int(x) for x in value.split(",")]
 
         value = type(x)(value)
         setattr(parameters, key, value)
@@ -220,6 +246,7 @@ def update_parameters(parm):
 # Download input files
 def dl_input_files():
     import fetch
+
     fetcher = fetch.Fetcher()
     fetcher.fetch()
 
@@ -239,25 +266,25 @@ def main(argv=None):
     # overwrite progress popup
     if not os.path.exists(PROGRESS_DIR):
         os.makedirs(PROGRESS_DIR)
-    progress = open(PROGRESS_DIR + "progress.txt", 'w')
+    progress = open(PROGRESS_DIR + "progress.txt", "w")
     progress.write("Setting up parameters...\n\n")
 
     # Create all the temporary directories we're going to use.
-    for d in ['log', 'result', 'work', "input"]:
-        mkdir(TMP_DIR + '/' + d)
+    for d in ["log", "result", "work", "input"]:
+        mkdir(TMP_DIR + "/" + d)
 
     # delete files in /tmp/input to re-download the input data files
     # otherwise the files in /tmp/input will be used.
     dl_input_files()
 
     step_fn = {
-        '0': run_step0,
-        '1': run_step1,
-        '2': run_step2,
-        '3': run_step3,
-        '3c': run_step3c,
-        '4': run_step4,
-        '5': run_step5,
+        "0": run_step0,
+        "1": run_step1,
+        "2": run_step2,
+        "3": run_step3,
+        "3c": run_step3c,
+        "4": run_step4,
+        "5": run_step5,
     }
 
     # Record start time now, and ending times for each step.
@@ -276,7 +303,7 @@ def main(argv=None):
         if step_list == t:
             logit = "STEPS %s to %s" % (step_list[0], step_list[-1])
         else:
-            logit = "STEPS %s" % ', '.join(step_list)
+            logit = "STEPS %s" % ", ".join(step_list)
     log("====> %s  ====" % logit)
     data = None
 
@@ -294,5 +321,5 @@ def main(argv=None):
     return 0
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     sys.exit(main())

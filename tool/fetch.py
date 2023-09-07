@@ -84,9 +84,11 @@ The config file syntax is as follows:
 
 # http://www.python.org/doc/2.4.4/lib/module-getopt.html
 import getopt
+
 # http://docs.python.org/release/2.4.4/lib/module-os.html
 # http://www.python.org/doc/2.4.4/lib/module-sys.html
 import sys
+
 # https://docs.python.org/2.6/library/urllib2.html
 import urllib.request
 import ssl
@@ -102,13 +104,12 @@ import zipfile
 
 class Fetcher(object):
     def __init__(self, **kwargs):
-
-        self.force = kwargs.pop('force', False)
-        self.output = kwargs.pop('output', sys.stdout)
+        self.force = kwargs.pop("force", False)
+        self.output = kwargs.pop("output", sys.stdout)
         self.output.write("Fetching Input Files:\n")
-        self.prefix = kwargs.pop('prefix', INPUT_DIR)
-        self.config_file = kwargs.pop('config_file', SOURCES_DIR + 'sources.txt')
-        self.requests = kwargs.pop('requests', None)
+        self.prefix = kwargs.pop("prefix", INPUT_DIR)
+        self.config_file = kwargs.pop("config_file", SOURCES_DIR + "sources.txt")
+        self.requests = kwargs.pop("requests", None)
 
     def fetch(self):
         (bundles, files) = self.find_requests(self.requests)
@@ -119,7 +120,7 @@ class Fetcher(object):
                     self.get_ghcn_file(url)
             else:
                 self.fetch_one(url, local)
-        for ((url, local), members) in bundles.items():
+        for (url, local), members in bundles.items():
             self.fetch_one(url, local, members=members)
         sys.stdout.flush()
 
@@ -129,6 +130,7 @@ class Fetcher(object):
         import datetime
         import urllib.request as urllib
         import ssl
+
         context = ssl._create_unverified_context()
         response = urllib.urlopen(public_dir, context=context)
         html = response.read().decode()
@@ -138,7 +140,9 @@ class Fetcher(object):
         for file in ghcn_filenames:
             conn = urllib.urlopen(public_dir + file, context=context)
             last_modified = conn.headers["last-modified"]
-            last_modified = datetime.datetime.strptime(last_modified[5:-4], '%d %b %Y %H:%M:%S')
+            last_modified = datetime.datetime.strptime(
+                last_modified[5:-4], "%d %b %Y %H:%M:%S"
+            )
             last_modifieds.append((file, last_modified))
         last_modifieds.sort(key=lambda x: x[1])
         recent_ghcn = [x[0] for x in last_modifieds[-2:]]
@@ -147,8 +151,8 @@ class Fetcher(object):
         else:
             qcf_file = recent_ghcn[1]
         print(qcf_file)
-        qcf = urllib.urlopen(url=public_dir+qcf_file, context=context)
-        f = open(INPUT_DIR+"ghcnm.tavg.qcf.dat", "w")
+        qcf = urllib.urlopen(url=public_dir + qcf_file, context=context)
+        f = open(INPUT_DIR + "ghcnm.tavg.qcf.dat", "w")
         content = qcf.read().decode()
         f.write(content)
         f.close()
@@ -161,9 +165,9 @@ class Fetcher(object):
             pass
 
     def key_lines(self):
-        comment_re = re.compile(r'((.*?[^\\])??)#')
-        key_re = re.compile('^([a-zA-Z_]+)\s*:\s*(.*)$')
-        for (no, l) in zip(itertools.count(1), open(self.config_file)):
+        comment_re = re.compile(r"((.*?[^\\])??)#")
+        key_re = re.compile("^([a-zA-Z_]+)\s*:\s*(.*)$")
+        for no, l in zip(itertools.count(1), open(self.config_file)):
             m = comment_re.match(l)
             if m:
                 bare = m.group(1)
@@ -177,16 +181,20 @@ class Fetcher(object):
             if m:
                 yield (no, m.groups())
             else:
-                raise Error("%s:%d: malformed line '%s'" % (self.config_file, no, l.strip()))
+                raise Error(
+                    "%s:%d: malformed line '%s'" % (self.config_file, no, l.strip())
+                )
 
     def read_config(self):
-        valid_keys = dict(group=re.compile(r'^\s*(.*?)\s*$'),
-                          file=re.compile(r'^([^\s]+)(\s+.*)?\s*$'),
-                          bundle=re.compile(r'^([^\s]+)(\s+.*)?\s*$'),
-                          member=re.compile(r'^([^\s]+)(\s+.*)?\s*$'))
-        group = ''
-        config = {'': dict(files=[], bundles={})}
-        for (no, (k, v)) in self.key_lines():
+        valid_keys = dict(
+            group=re.compile(r"^\s*(.*?)\s*$"),
+            file=re.compile(r"^([^\s]+)(\s+.*)?\s*$"),
+            bundle=re.compile(r"^([^\s]+)(\s+.*)?\s*$"),
+            member=re.compile(r"^([^\s]+)(\s+.*)?\s*$"),
+        )
+        group = ""
+        config = {"": dict(files=[], bundles={})}
+        for no, (k, v) in self.key_lines():
             k = k.lower()
             if k not in valid_keys:
                 raise Error("%s:%d: unknown key '%s'" % (self.config_file, no, k))
@@ -195,26 +203,28 @@ class Fetcher(object):
                 raise Error("%s:%d: malformed '%s' line" % (self.config_file, no, k))
 
             # 'bundle' only persists over 'member' lines.
-            if k != 'member':
+            if k != "member":
                 bundle = None
 
-            if k == 'group':
+            if k == "group":
                 group = m.group(1)
                 config[group] = dict(files=[], bundles={})
-            elif k == 'file':
-                config[group]['files'].append(m.groups())
+            elif k == "file":
+                config[group]["files"].append(m.groups())
                 pattern = m.group(1)
                 local = m.group(2)
-            elif k == 'bundle':
+            elif k == "bundle":
                 bundle = m.groups()
                 members = []
-                config[group]['bundles'][bundle] = members
+                config[group]["bundles"][bundle] = members
                 pattern = m.group(1)
                 local = m.group(2)
-            elif k == 'member':
+            elif k == "member":
                 if bundle is None:
-                    raise Error("%s:%d: 'member' line with no bundle." % (self.config_file, no))
-                config[group]['bundles'][bundle].append(m.groups())
+                    raise Error(
+                        "%s:%d: 'member' line with no bundle." % (self.config_file, no)
+                    )
+                config[group]["bundles"][bundle].append(m.groups())
                 pattern = m.group(1)
                 local = m.group(2)
 
@@ -227,23 +237,23 @@ class Fetcher(object):
         group_names = config.keys()
         group_names = sorted(group_names)
         for g in group_names:
-            if g == '':
+            if g == "":
                 self.output.write("Default group: \n")
             else:
                 self.output.write("Group '%s':\n" % g)
-            bs = config[g]['bundles'].items()
+            bs = config[g]["bundles"].items()
             bs = sorted(bs)
-            for ((pattern, local), members) in bs:
+            for (pattern, local), members in bs:
                 self.output.write("  bundle '%s':\n" % pattern)
                 if local:
                     self.output.write("   (read to '%s')\n" % local)
-                for (p, l) in members:
+                for p, l in members:
                     self.output.write("    member '%s'\n" % p)
                     if l:
                         self.output.write("    (read to '%s')\n" % l)
-            fs = config[g]['files']
+            fs = config[g]["files"]
             fs = sorted(fs)
-            for (pattern, local) in fs:
+            for pattern, local in fs:
                 self.output.write("  file '%s'\n" % pattern)
                 if local:
                     self.output.write("   (read to '%s')\n" % local)
@@ -257,21 +267,23 @@ class Fetcher(object):
         def add(fs, bs):
             for f in fs:
                 files.append(f)
-            for (b, ms) in bs.items():
+            for b, ms in bs.items():
                 bundles[b] = bundles.get(b, []) + ms
 
         if not requests:
-            requests = ['']
+            requests = [""]
         for request in list(requests):
             if request in config:
-                add(config[request]['files'], config[request]['bundles'])
+                add(config[request]["files"], config[request]["bundles"])
                 requests.remove(request)
         for request in list(requests):
             for group_name in config.keys():
                 if re.search(request, group_name):
-                    self.output.write("No group named '%s', using '%s' instead.\n"
-                                      % (request, group_name))
-                    add(config[group_name]['files'], config[group_name]['bundles'])
+                    self.output.write(
+                        "No group named '%s', using '%s' instead.\n"
+                        % (request, group_name)
+                    )
+                    add(config[group_name]["files"], config[group_name]["bundles"])
                     try:
                         requests.remove(request)
                     except ValueError:
@@ -279,12 +291,16 @@ class Fetcher(object):
                         pass
         for request in list(requests):
             for dict in config.values():
-                for (b, ms) in dict['bundles'].items():
+                for b, ms in dict["bundles"].items():
                     (pattern, local) = b
-                    if re.search(request, pattern) or (local is not None and re.search(request, local)):
-                        self.output.write("No group matching '%s',\n"
-                                          "    using bundle '%s:%s' instead.\n"
-                                          % (request, pattern, local))
+                    if re.search(request, pattern) or (
+                        local is not None and re.search(request, local)
+                    ):
+                        self.output.write(
+                            "No group matching '%s',\n"
+                            "    using bundle '%s:%s' instead.\n"
+                            % (request, pattern, local)
+                        )
                         add([], {(pattern, local): ms})
                         try:
                             requests.remove(request)
@@ -293,11 +309,15 @@ class Fetcher(object):
                             pass
         for request in list(requests):
             for dict in config.values():
-                for (pattern, local) in dict['files']:
-                    if re.search(request, pattern) or (local is not None and re.search(request, local)):
-                        self.output.write("No group or bundle matching '%s',\n"
-                                          "    using file '%s:%s' instead.\n"
-                                          % (request, pattern, local))
+                for pattern, local in dict["files"]:
+                    if re.search(request, pattern) or (
+                        local is not None and re.search(request, local)
+                    ):
+                        self.output.write(
+                            "No group or bundle matching '%s',\n"
+                            "    using file '%s:%s' instead.\n"
+                            % (request, pattern, local)
+                        )
                         add([(pattern, local)], {})
                         try:
                             requests.remove(request)
@@ -306,13 +326,17 @@ class Fetcher(object):
                             pass
         for request in list(requests):
             for dict in config.values():
-                for (b, ms) in dict['bundles'].items():
-                    for (pattern, local) in ms:
-                        if re.search(request, pattern) or (local is not None and re.search(request, local)):
-                            self.output.write("No group or bundle matching '%s',\n"
-                                              "    using member '%s:%s'\n"
-                                              "    of bundle '%s:%s' instead.\n"
-                                              % (request, pattern, local, b[0], b[1]))
+                for b, ms in dict["bundles"].items():
+                    for pattern, local in ms:
+                        if re.search(request, pattern) or (
+                            local is not None and re.search(request, local)
+                        ):
+                            self.output.write(
+                                "No group or bundle matching '%s',\n"
+                                "    using member '%s:%s'\n"
+                                "    of bundle '%s:%s' instead.\n"
+                                % (request, pattern, local, b[0], b[1])
+                            )
                             add([], {b: [(pattern, local)]})
                             try:
                                 requests.remove(request)
@@ -326,13 +350,13 @@ class Fetcher(object):
     def fetch_one(self, url, local, members=None):
         if members is None:
             members = []
-        m = re.match('([a-z]+)://([^/]+)/(.*/)([^/]+)$', url)
+        m = re.match("([a-z]+)://([^/]+)/(.*/)([^/]+)$", url)
         if m is None:
             raise Error("Malformed URL '%s'" % url)
         protocol = m.group(1)
-        if protocol in 'https http ftp'.split():
+        if protocol in "https http ftp".split():
             self.fetch_url(url, local, members)
-        elif protocol == 'ftpmatch':
+        elif protocol == "ftpmatch":
             host = m.group(2)
             path = m.group(3)
             pattern = m.group(4)
@@ -344,7 +368,7 @@ class Fetcher(object):
         import os
 
         if local is None:
-            local = url.split('/')[-1]
+            local = url.split("/")[-1]
         name = os.path.join(self.prefix, local.strip())
 
         if os.path.exists(name) and os.path.getsize(name) == 0:
@@ -363,9 +387,10 @@ class Fetcher(object):
             # Check getcode(), but only for HTTP.
             if remote.getcode() and remote.getcode() != 200:
                 raise Error(
-                    "Fetching %s to %s failed (status code %s)." %
-                    (url, name, remote.getcode()))
-            with open(name, 'wb') as out:
+                    "Fetching %s to %s failed (status code %s)."
+                    % (url, name, remote.getcode())
+                )
+            with open(name, "wb") as out:
                 copy_progress(remote, out, self.output)
         if os.path.getsize(name) == 0:
             raise Error("%s is empty." % name)
@@ -377,27 +402,30 @@ class Fetcher(object):
         # http://www.python.org/doc/2.4.4/lib/module-ftplib.html
         import ftplib
 
-        remote = ftplib.FTP(host, 'ftp', 'info@climatecode.org')
+        remote = ftplib.FTP(host, "ftp", "info@climatecode.org")
         remote.cwd(path)
         dir = remote.nlst()
         good = filter(regexp.match, dir)
         good = sorted(good)
 
         if not good:
-            raise Error("Could not find any file matching '%s' at ftp://%s/%s" % (pattern, host, path))
+            raise Error(
+                "Could not find any file matching '%s' at ftp://%s/%s"
+                % (pattern, host, path)
+            )
         remotename = good[-1]
-        path = path.strip('/')
-        self.fetch_url('ftp://%s/%s/%s' % (host, path, remotename), local, members)
+        path = path.strip("/")
+        self.fetch_url("ftp://%s/%s/%s" % (host, path, remotename), local, members)
 
     def extract(self, name, members):
-        exts = name.split('.')
-        if exts[-1] in 'gz bz bz2'.split():
+        exts = name.split(".")
+        if exts[-1] in "gz bz bz2".split():
             exts = exts[:-1]
-        if exts[-1] in 'tar tgz tbz tbz2'.split():
+        if exts[-1] in "tar tgz tbz tbz2".split():
             self.extract_tar(name, members)
-        elif exts[-1] in 'zip'.split():
+        elif exts[-1] in "zip".split():
             self.extract_zip(name, members)
-        elif name.endswith('.gz'):
+        elif name.endswith(".gz"):
             self.extract_gzip(name, members)
         else:
             raise Error("Can't extract members from this type of file: %r", name)
@@ -415,23 +443,27 @@ class Fetcher(object):
 
         # Watch out for bugs in some version of Python.
         # See http://code.google.com/p/cccgistemp/issues/detail?id=26
-        tar = tarfile.open(name=archive, mode='r')
+        tar = tarfile.open(name=archive, mode="r")
         for info in tar:
             # would like to use 'any', but that requires Python 2.5
-            matches = [member for member in members if re.search(member[0] + '$', info.name)]
+            matches = [
+                member for member in members if re.search(member[0] + "$", info.name)
+            ]
             if matches:
                 if len(matches) > 1:
-                    raise Error("Multiple patterns match '%s': %s" % (info.name, matches))
+                    raise Error(
+                        "Multiple patterns match '%s': %s" % (info.name, matches)
+                    )
                 members.remove(matches[0])
                 local = matches[0][1]
                 if local is None:
-                    local = info.name.split('/')[-1]
+                    local = info.name.split("/")[-1]
                 local = os.path.join(self.prefix, local.strip())
                 if os.path.exists(local) and not self.force:
                     self.output.write("  ... %s already exists.\n" % local)
                 else:
                     self.make_prefix()
-                    out = open(local, 'wb')
+                    out = open(local, "wb")
                     self.output.write("  ... %s from %s.\n" % (local, info.name))
                     # The following used to be simply
                     # ``out.writelines(tar.extractfile(info))``, but the Python2.4
@@ -443,26 +475,31 @@ class Fetcher(object):
                             break
                         out.write(buf)
         if members:
-            raise Error("Couldn't find these members in '%s': %s" % (archive, [member[0] for member in members]))
+            raise Error(
+                "Couldn't find these members in '%s': %s"
+                % (archive, [member[0] for member in members])
+            )
 
     def extract_zip(self, name, members):
         z = zipfile.ZipFile(name)
         for entry in z.namelist():
-            matches = [member for member in members if re.search(member[0] + '$', entry)]
+            matches = [
+                member for member in members if re.search(member[0] + "$", entry)
+            ]
             if matches:
                 if len(matches) > 1:
                     raise Error("Multiple patterns match '%s': %s" % (entry, matches))
                 members.remove(matches[0])
                 local = matches[0][1]
                 if local is None:
-                    local = entry.split('/')[-1]
+                    local = entry.split("/")[-1]
                 local = os.path.join(self.prefix, local.strip())
                 if os.path.exists(local) and not self.force:
                     self.output.write("  ... %s already exists.\n" % local)
                 else:
                     self.make_prefix()
                     # Only works for text files.
-                    out = open(local, 'w')
+                    out = open(local, "w")
                     self.output.write("  ... %s from %s.\n" % (local, entry))
                     src = z.open(entry)
                     while True:
@@ -473,19 +510,24 @@ class Fetcher(object):
                     out.close()
                     src.close()
         if members:
-            raise Error("Couldn't find these members in '%s': %s" % (name, [member[0] for member in members]))
+            raise Error(
+                "Couldn't find these members in '%s': %s"
+                % (name, [member[0] for member in members])
+            )
 
     def extract_gzip(self, name, members):
         import gzip
         import shutil
 
         if len(members) > 1:
-            raise Error("Simple compressed file, %r, is only allowed exactly one member", name)
+            raise Error(
+                "Simple compressed file, %r, is only allowed exactly one member", name
+            )
 
         if not members:
-            basename = name.split('/')[-1]
+            basename = name.split("/")[-1]
             # remove final extension (should be '.gz')
-            basename = '.'.join(basename.split('.')[:-1])
+            basename = ".".join(basename.split(".")[:-1])
             members.append((basename, None))
 
         (local, _) = members[0]
@@ -498,7 +540,7 @@ class Fetcher(object):
             return
 
         self.make_prefix()
-        out = open(local, 'wb')
+        out = open(local, "wb")
         inp = gzip.open(name)
         shutil.copyfileobj(inp, out)
         inp.close()
@@ -517,7 +559,7 @@ def copy_progress(source, destination, progress):
     """
 
     try:
-        content_length = int(source.info()['Content-Length'])
+        content_length = int(source.info()["Content-Length"])
     except (AttributeError, KeyError, TypeError, ValueError):
         content_length = None
 
@@ -526,16 +568,15 @@ def copy_progress(source, destination, progress):
         chunk = source.read(8000)
         got += len(chunk)
         if content_length is not None:
-            outof = '/%d [%d%%]' % (
-                content_length, 100 * got // content_length)
+            outof = "/%d [%d%%]" % (content_length, 100 * got // content_length)
         else:
-            outof = ''
+            outof = ""
         progress.write("\r  %d%s" % (got, outof))
         if not chunk:
             break
         destination.write(chunk)
 
-    progress.write('\n')
+    progress.write("\n")
     progress.flush()
     return 0
 
@@ -557,18 +598,20 @@ def main(argv=None):
     kwargs = dict()
     try:
         try:
-            opts, args = getopt.getopt(argv[1:], "", ["help", "list", "force", "store=", "config="])
+            opts, args = getopt.getopt(
+                argv[1:], "", ["help", "list", "force", "store=", "config="]
+            )
             for o, a in opts:
-                if o in ('--help',):
+                if o in ("--help",):
                     print(__doc__)
                     return 0
-                if o == '--list':
+                if o == "--list":
                     write_list = True
-                if o == '--force':
+                if o == "--force":
                     kwargs.update(force=True)
-                if o == '--config':
+                if o == "--config":
                     kwargs.update(config_file=a)
-                if o == '--store':
+                if o == "--store":
                     kwargs.update(prefix=a)
         except getopt.error as msg:
             raise Usage(msg)

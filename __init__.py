@@ -1,3 +1,1 @@
-__author__ = 'apersin'
-
-
+__author__ = "apersin"

@@ -40,6 +40,7 @@ and black for 1.000 (use land).
 """
 
 import csv
+
 # http://docs.python.org/release/2.4.4/lib/module-itertools.html
 import itertools
 import math
@@ -73,11 +74,13 @@ def to_polar_svg(inp, date=None, inv=None, lat=None, trend=False):
     else:
         colour = colourscale
 
-    print("""<svg
+    print(
+        """<svg
   xmlns="http://www.w3.org/2000/svg"
   xmlns:xlink="http://www.w3.org/1999/xlink"
   version="1.1">
-""")
+"""
+    )
     # half-width
     hw = 250
     scale = 250
@@ -95,8 +98,12 @@ def to_polar_svg(inp, date=None, inv=None, lat=None, trend=False):
 
     print("""<g class="grid">""")
     for d in [30, 60]:
-        print("""<circle r="{:.1f}"
-          fill="none" stroke-width="0.7" stroke="black" />""".format(math.cos(math.radians(d)) * scale))
+        print(
+            """<circle r="{:.1f}"
+          fill="none" stroke-width="0.7" stroke="black" />""".format(
+                math.cos(math.radians(d)) * scale
+            )
+        )
     print("</g>")
 
     if inv:
@@ -141,8 +148,12 @@ def station_svg(inv, scale):
             x, y = polar_project((lat, lon))
             x *= scale
             y *= -scale
-            print("""<circle r="3" cx="{:.1f}" cy="{:.1f}" onclick="console.log('{}')"
-              stroke-width="0.7" stroke="green" fill="none" />""".format(x, y, id11))
+            print(
+                """<circle r="3" cx="{:.1f}" cy="{:.1f}" onclick="console.log('{}')"
+              stroke-width="0.7" stroke="green" fill="none" />""".format(
+                    x, y, id11
+                )
+            )
 
     print("""</g>""")
 
@@ -167,9 +178,29 @@ def cell_svg(qs, fill_arg, scale, id=None):
     rs *= scale
     qs = [(x * scale, -y * scale) for x, y in qs]
 
-    d = "M {:.1f} {:.1f} A {:.1f} {:.1f} {} {} {} {:.1f} {:.1f} L {:.1f} {:.1f} A {:.1f} {:.1f} {} {} {} {:.1f} " \
-        "{:.1f} z".format(qs[0][0], qs[0][1], rn, rn, 0, 0, 1, qs[1][0], qs[1][1], qs[2][0], qs[2][1], rs, rs, 0, 0, 1,
-                          qs[3][0], qs[3][1])
+    d = (
+        "M {:.1f} {:.1f} A {:.1f} {:.1f} {} {} {} {:.1f} {:.1f} L {:.1f} {:.1f} A {:.1f} {:.1f} {} {} {} {:.1f} "
+        "{:.1f} z".format(
+            qs[0][0],
+            qs[0][1],
+            rn,
+            rn,
+            0,
+            0,
+            1,
+            qs[1][0],
+            qs[1][1],
+            qs[2][0],
+            qs[2][1],
+            rs,
+            rs,
+            0,
+            0,
+            1,
+            qs[3][0],
+            qs[3][1],
+        )
+    )
 
     fill = "#{:02x}{:02x}{:02x}".format(*fill_arg)
 
@@ -228,13 +259,17 @@ def to_rect_png(inp, date=None):
         a = [list(itertools.chain(*row)) for row in a]
 
     try:
-        outpath = inp.name + '.png'
+        outpath = inp.name + ".png"
     except ValueError:
-        outpath = 'out.png'
-    w = png.Writer(width=width, height=height,
-                   greyscale=(colour == greyscale), alpha=False,
-                   bitdepth=8)
-    w.write(open(outpath, 'wb'), a)
+        outpath = "out.png"
+    w = png.Writer(
+        width=width,
+        height=height,
+        greyscale=(colour == greyscale),
+        alpha=False,
+        bitdepth=8,
+    )
+    w.write(open(outpath, "wb"), a)
 
 
 def cells(inp, date=None, trend=True):
@@ -272,7 +307,7 @@ def extract_date(inp, cells, date):
     date box by box.
     """
 
-    year, month = map(int, date.split('-'))
+    year, month = map(int, date.split("-"))
 
     records = iter(gio.SubboxReader(inp))
     meta = next(records)
@@ -295,9 +330,9 @@ def extract_trend(inp, cells):
     base_year = meta.yrbeg
 
     name = inp.name
-    csv_name = name + '.csv'
+    csv_name = name + ".csv"
 
-    with open(csv_name, 'w') as csv_out:
+    with open(csv_name, "w") as csv_out:
         csv_file = csv.writer(csv_out)
 
         for record, box in zip(records, cells):
@@ -319,12 +354,13 @@ def colourscale(v):
     Convert value *v* to a colour scale.
     """
 
-    scale = [(-4, (0, 0, 255)),
-             (0, (255, 255, 255)),
-             (4, (255, 0, 0)),
-             (8, (0, 255, 0)),
-             (12, (255, 255, 0)),
-             ]
+    scale = [
+        (-4, (0, 0, 255)),
+        (0, (255, 255, 255)),
+        (4, (255, 0, 0)),
+        (8, (0, 255, 0)),
+        (12, (255, 255, 0)),
+    ]
 
     if v == MISSING:
         return 128, 128, 128
@@ -386,11 +422,12 @@ def id11(box):
     an 11 character ID.
     """
     lat, lon = eqarea.centre(box)
-    return '%+05.1f%+06.1f' % (lat, lon)
+    return "%+05.1f%+06.1f" % (lat, lon)
 
 
 def bad(*l, **k):
     import sys
+
     print(__doc__.strip(), sys.stderr)
     sys.exit(2)
 
@@ -405,21 +442,23 @@ def main(argv=None):
     command = bad
 
     k = {}
-    opt, arg = getopt.getopt(argv[1:], '', ['date=', 'ghcnm', 'inv=', 'lat=', 'trend', 'polar', 'rect'])
+    opt, arg = getopt.getopt(
+        argv[1:], "", ["date=", "ghcnm", "inv=", "lat=", "trend", "polar", "rect"]
+    )
     for o, v in opt:
-        if o == '--date':
-            k['date'] = v
-        if o == '--inv':
-            k['inv'] = v
-        if o == '--lat':
-            k['lat'] = float(v)
-        if o == '--trend':
-            k['trend'] = True
-        if o == '--ghcnm':
+        if o == "--date":
+            k["date"] = v
+        if o == "--inv":
+            k["inv"] = v
+        if o == "--lat":
+            k["lat"] = float(v)
+        if o == "--trend":
+            k["trend"] = True
+        if o == "--ghcnm":
             command = to_ghcnm
-        if o == '--polar':
+        if o == "--polar":
             command = to_polar_svg
-        if o == '--rect':
+        if o == "--rect":
             command = to_rect_png
 
     if arg:
@@ -431,5 +470,5 @@ def main(argv=None):
         command(a, **k)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

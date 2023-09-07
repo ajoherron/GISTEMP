@@ -4,18 +4,18 @@ import os
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-BASE_PATH = BASE_DIR + '/gistemp4.0'
+BASE_PATH = BASE_DIR + "/gistemp4.0"
 
-TMP_DIR = BASE_PATH + '/tmp/'
+TMP_DIR = BASE_PATH + "/tmp/"
 
-PROGRESS_DIR = TMP_DIR + 'progress/'
+PROGRESS_DIR = TMP_DIR + "progress/"
 
-SOURCES_DIR = BASE_PATH + '/config/'
+SOURCES_DIR = BASE_PATH + "/config/"
 
-INPUT_DIR = TMP_DIR + 'input/'
+INPUT_DIR = TMP_DIR + "input/"
 
-LOG_DIR = TMP_DIR + 'log/'
+LOG_DIR = TMP_DIR + "log/"
 
-RESULT_DIR = TMP_DIR + 'result/'
+RESULT_DIR = TMP_DIR + "result/"
 
-WORK_DIR = TMP_DIR + 'work/'
+WORK_DIR = TMP_DIR + "work/"

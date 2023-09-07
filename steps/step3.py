@@ -17,7 +17,7 @@ from steps.giss_data import MISSING, valid
 
 from settings import *
 
-log = open(os.path.join(LOG_DIR, 'step3.log'), 'w')
+log = open(os.path.join(LOG_DIR, "step3.log"), "w")
 
 
 def incircle(iterable, arc, lat, lon):
@@ -64,7 +64,9 @@ def incircle(iterable, arc, lat, lon):
 
         # Cosine of angle subtended by arc between 2 points on a
         # unit sphere is the vector dot product.
-        cosd = (sinlats * sinlat + coslats * coslat * (coslons * coslon + sinlons * sinlon))
+        cosd = sinlats * sinlat + coslats * coslat * (
+            coslons * coslon + sinlons * sinlon
+        )
 
         if cosd > cosarc:
             d = math.sqrt(2 * (1 - cosd))  # chord length on unit sphere
@@ -93,7 +95,7 @@ def iter_subbox_grid(station_records, max_months, first_year, radius):
     import sys
 
     dribble = sys.stdout
-    progress = open(PROGRESS_DIR + 'progress.txt', 'a')
+    progress = open(PROGRESS_DIR + "progress.txt", "a")
     progress.write("COMPUTING 80 REGIONS from 8000 SUBBOXES:")
 
     # Critical radius as an angle of arc
@@ -116,7 +118,9 @@ def iter_subbox_grid(station_records, max_months, first_year, radius):
             if round(centre[0]) <= -84:
                 centre = (-90, 0)
 
-            dribble.write("\rsubbox at %+05.1f%+06.1f (%d empty)" % (centre + (n_empty_cells,)))
+            dribble.write(
+                "\rsubbox at %+05.1f%+06.1f (%d empty)" % (centre + (n_empty_cells,))
+            )
             dribble.flush()
             # Determine the contributing stations to this grid cell.
             contributors = list(incircle(station_records, arc, *centre))
@@ -125,9 +129,13 @@ def iter_subbox_grid(station_records, max_months, first_year, radius):
             subbox_series = [MISSING] * max_months
 
             if not contributors:
-                box_obj = giss_data.Series(series=subbox_series,
-                                           box=list(subbox), stations=0, station_months=0,
-                                           d=MISSING)
+                box_obj = giss_data.Series(
+                    series=subbox_series,
+                    box=list(subbox),
+                    stations=0,
+                    station_months=0,
+                    d=MISSING,
+                )
                 n_empty_cells += 1
                 yield box_obj
                 continue
@@ -141,7 +149,7 @@ def iter_subbox_grid(station_records, max_months, first_year, radius):
             offset = record.rel_first_month - 1
             a = record.series  # just a temporary
 
-            subbox_series[offset:offset + len(a)] = a
+            subbox_series[offset : offset + len(a)] = a
 
             max_weight = wt
             weight = [wt * valid(v) for v in subbox_series]
@@ -155,47 +163,54 @@ def iter_subbox_grid(station_records, max_months, first_year, radius):
             # string that records whether each of the 12 months is used.
             # '0' in position *i* indicates that the month was not used,
             # a '1' indicates that is was used.  January is position 0.
-            l = [any(valid(v) for v in subbox_series[i::12])
-                 for i in range(12)]
-            s = ''.join('01'[x] for x in l)
+            l = [any(valid(v) for v in subbox_series[i::12]) for i in range(12)]
+            s = "".join("01"[x] for x in l)
             contributed = [[record.uid, wt, s]]
 
             # Add in the remaining stations
             for record, wt in contributors[1:]:
                 new = [MISSING] * max_months
                 aa, bb = record.rel_first_month, record.rel_last_month
-                new[aa - 1:bb] = record.series
+                new[aa - 1 : bb] = record.series
                 station_months = series.combine(
-                    subbox_series, weight, new, wt,
-                    parameters.gridding_min_overlap)
+                    subbox_series, weight, new, wt, parameters.gridding_min_overlap
+                )
                 n_good_months = sum(station_months)
                 total_good_months += n_good_months
                 if n_good_months == 0:
-                    contributed.append([record.uid, 0.0, '0' * 12])
+                    contributed.append([record.uid, 0.0, "0" * 12])
                     continue
                 total_stations += 1
-                s = ''.join('01'[bool(x)] for x in station_months)
+                s = "".join("01"[bool(x)] for x in station_months)
                 contributed.append([record.uid, wt, s])
 
                 max_weight = max(max_weight, wt)
 
-            series.anomalize(subbox_series,
-                             parameters.gridding_reference_period, first_year)
+            series.anomalize(
+                subbox_series, parameters.gridding_reference_period, first_year
+            )
 
-            box_obj = giss_data.Series(series=subbox_series, n=max_months,
-                                       box=list(subbox), stations=total_stations,
-                                       station_months=total_good_months,
-                                       d=radius * (1 - max_weight))
-            log.write("%s stations %s\n" % (box_obj.uid,
-                                            asjson(contributed)))
+            box_obj = giss_data.Series(
+                series=subbox_series,
+                n=max_months,
+                box=list(subbox),
+                stations=total_stations,
+                station_months=total_good_months,
+                d=radius * (1 - max_weight),
+            )
+            log.write("%s stations %s\n" % (box_obj.uid, asjson(contributed)))
             yield box_obj
-        plural_suffix = 's'
+        plural_suffix = "s"
         if n_empty_cells == 1:
-            plural_suffix = ''
-        dribble.write('\rRegion (%+03.0f/%+03.0f S/N %+04.0f/%+04.0f W/E): %d empty cell%s.\n' % (
-            tuple(box) + (n_empty_cells, plural_suffix)))
-        progress.write('\rRegion (%+03.0f/%+03.0f S/N %+04.0f/%+04.0f W/E): %d empty cell%s.' % (
-            tuple(box) + (n_empty_cells, plural_suffix)))
+            plural_suffix = ""
+        dribble.write(
+            "\rRegion (%+03.0f/%+03.0f S/N %+04.0f/%+04.0f W/E): %d empty cell%s.\n"
+            % (tuple(box) + (n_empty_cells, plural_suffix))
+        )
+        progress.write(
+            "\rRegion (%+03.0f/%+03.0f S/N %+04.0f/%+04.0f W/E): %d empty cell%s."
+            % (tuple(box) + (n_empty_cells, plural_suffix))
+        )
         progress.flush()
     dribble.write("\n")
 
@@ -222,14 +237,25 @@ def step3(records, radius=parameters.gridding_radius, year_begin=1880):
     assert year_begin <= last_year
     # Compute total number of months in a fixed length record.
     monm = 12 * (last_year - year_begin + 1)
-    meta = giss_data.SubboxMetaData(mo1=None, kq=1, mavg=6, monm=monm,
-                                    monm4=monm + 7, yrbeg=year_begin, missing_flag=9999,
-                                    precipitation_flag=9999,
-                                    title='GHCN V3 Temperatures (.1 C)')
+    meta = giss_data.SubboxMetaData(
+        mo1=None,
+        kq=1,
+        mavg=6,
+        monm=monm,
+        monm4=monm + 7,
+        yrbeg=year_begin,
+        missing_flag=9999,
+        precipitation_flag=9999,
+        title="GHCN V3 Temperatures (.1 C)",
+    )
 
-    units = '(C)'
-    title = "%20.20s ANOM %-4s CR %4dKM %s-present" % (meta.title,
-                                                       units, radius, year_begin)
+    units = "(C)"
+    title = "%20.20s ANOM %-4s CR %4dKM %s-present" % (
+        meta.title,
+        units,
+        radius,
+        year_begin,
+    )
 
     meta.mo1 = 1
     meta.title = title.ljust(80)

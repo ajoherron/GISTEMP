@@ -23,7 +23,7 @@ import parameters
 from steps.giss_data import valid, invalid, MISSING
 from settings import *
 
-log = open(os.path.join(LOG_DIR, 'step2.log'), 'w')
+log = open(os.path.join(LOG_DIR, "step2.log"), "w")
 
 
 def urban_adjustments(record_stream):
@@ -76,7 +76,8 @@ def urban_adjustments(record_stream):
         # The first and last years, in the urban series, that will be
         # adjusted.
         adjust_first, adjust_last = extend_range(
-            us.anomalies, quorate_count, fit.first, fit.last)
+            us.anomalies, quorate_count, fit.first, fit.last
+        )
         adjust_record(record, fit, adjust_first, adjust_last)
         yield record
 
@@ -85,7 +86,7 @@ def annotate_records(stream):
     """Take each of the records in *stream* and annotate them with
     computed data (critically, its annual anomaly series).  For each
     record an annotation object is created.
-    
+
     Returns a tuple of (*rural*, *urban*, *all*).  *rural* is a
     list of annotation objects for rural stations (sorted); *urban* is a
     dict that maps from an urban record to its annotation object; *all*
@@ -109,8 +110,10 @@ def annotate_records(stream):
             continue
         d = Struct()
         d.anomalies = anomalies
-        log.write("%s annual-anomaly %r\n" %
-                  (record.uid, dict(year=giss_data.BASE_YEAR, series=anomalies)))
+        log.write(
+            "%s annual-anomaly %r\n"
+            % (record.uid, dict(year=giss_data.BASE_YEAR, series=anomalies))
+        )
         station = record.station
         d.cslat = math.cos(station.lat * pi180)
         d.snlat = math.sin(station.lat * pi180)
@@ -214,18 +217,20 @@ def rural_test():
     if _rural_test:
         return _rural_test
 
-    comp_dict = {'=': lambda x, y: x == y,
-                 '<': lambda x, y: x < y,
-                 '<=': lambda x, y: x <= y,
-                 '>': lambda x, y: x > y,
-                 '>=': lambda x, y: x >= y}
+    comp_dict = {
+        "=": lambda x, y: x == y,
+        "<": lambda x, y: x < y,
+        "<=": lambda x, y: x <= y,
+        ">": lambda x, y: x > y,
+        ">=": lambda x, y: x >= y,
+    }
 
     import re
 
     tests = []
     # Process the list of tests into a set of triples:
-    for test in parameters.rural_designator.split(','):
-        m = re.match(r'([a-z_]+)\s*((=|<|<=|>|>=)\s*([0-9]+))', test)
+    for test in parameters.rural_designator.split(","):
+        m = re.match(r"([a-z_]+)\s*((=|<|<=|>|>=)\s*([0-9]+))", test)
         if m:
             field = m.group(1)
             if m.group(2):
@@ -233,12 +238,15 @@ def rural_test():
                 value = int(m.group(4))
             else:
                 comparison = lambda x, y: x == y
-                if field == 'us_light':
-                    value = '1'
-                elif field == 'popcls':
-                    value = 'R'
+                if field == "us_light":
+                    value = "1"
+                elif field == "popcls":
+                    value = "R"
                 else:
-                    assert 0, "Don't know how to test '%s' in parameters.rural_designator" % field
+                    assert 0, (
+                        "Don't know how to test '%s' in parameters.rural_designator"
+                        % field
+                    )
         else:
             assert 0, "Malformed test in parameters.rural_designator: '%s'" % test
         tests.append((field, comparison, value))
@@ -252,9 +260,9 @@ def is_rural(station):
     according to the specification of parameters.rural_designator."""
     tests = rural_test()
 
-    for (field, comparison, threshold) in tests:
-        value = getattr(station, field, '')
-        if str(value).strip() == '':
+    for field, comparison, threshold in tests:
+        value = getattr(station, field, "")
+        if str(value).strip() == "":
             continue
         break
     return comparison(value, threshold)
@@ -276,8 +284,9 @@ def get_neighbours(us, rural_stations, radius):
     rbyrc = earth.radius / radius
 
     for rs in rural_stations:
-        csdbyr = (rs.snlat * us.snlat + rs.cslat * us.cslat *
-                  (rs.cslon * us.cslon + rs.snlon * us.snlon))
+        csdbyr = rs.snlat * us.snlat + rs.cslat * us.cslat * (
+            rs.cslon * us.cslon + rs.snlon * us.snlon
+        )
 
         if csdbyr <= cos_crit:
             continue
@@ -295,13 +304,13 @@ def combine_neighbours(iyrm, neighbours):
     to their .weight property (previously computed to be based on distance
     from the urban station being considered), to give a combined
     annual anomaly series.
-    
+
     *iyrm* is the length of the resulting combined series.
 
     This function assumes that each of the neighbours annual anomaly
     series begins in the same year; the result series begins in that
     year also.
-    
+
     Returns a tuple: (*counts*, *combined*), where
     *counts* is a per-year list of the number of stations combined,
     *combined* is the combined neighbour series.
@@ -316,7 +325,7 @@ def combine_neighbours(iyrm, neighbours):
     # We start with that one ...
     rs = neighbours[0]
     assert len(rs.anomalies) <= iyrm
-    combined[:len(rs.anomalies)] = rs.anomalies
+    combined[: len(rs.anomalies)] = rs.anomalies
     for i, anom in enumerate(rs.anomalies):
         if valid(anom):
             weights[i] = rs.weight
@@ -375,7 +384,7 @@ def prepare_series(from_year, combined, urban_series, counts):
     is the difference between the combined rural station anomaly series
     *combined* and the urban station series *urban_series* (each of
     these is an annual series, one datum per year).
-    
+
     The returned points only include valid years, from the first
     quorate year to the last quorate year.  A valid year is one in
     which both the urban station and the combined rural series have
@@ -448,7 +457,8 @@ def rural_difference(urban, rural_stations):
 
         while True:
             points, quorate_count = prepare_series(
-                start_year, combined, urban.anomalies, counts)
+                start_year, combined, urban.anomalies, counts
+            )
 
             if quorate_count < parameters.urban_adjustment_min_years:
                 break
@@ -457,23 +467,34 @@ def rural_difference(urban, rural_stations):
             first = min(points)[0]
             last = max(points)[0]
 
-            if quorate_count >= (parameters.urban_adjustment_proportion_good * (last - first + 0.9)):
+            if quorate_count >= (
+                parameters.urban_adjustment_proportion_good * (last - first + 0.9)
+            ):
                 # Found a suitable combined record.
 
                 log.write('%s step2-action "adjusted"\n' % urban.uid)
-                log.write("%s neighbours %r\n" %
-                          (urban.uid, list(map(lambda r: r.uid, neighbours))))
-                log.write("%s adjustment %r\n" %
-                          (urban.uid, dict(series=combined, year=giss_data.BASE_YEAR,
-                                           difference=points)))
+                log.write(
+                    "%s neighbours %r\n"
+                    % (urban.uid, list(map(lambda r: r.uid, neighbours)))
+                )
+                log.write(
+                    "%s adjustment %r\n"
+                    % (
+                        urban.uid,
+                        dict(
+                            series=combined, year=giss_data.BASE_YEAR, difference=points
+                        ),
+                    )
+                )
                 return points, quorate_count
 
             # Not enough good years for the given range.  Try to save
             # cases in which the gaps are in the early part, by
             # dropping that part and going around to prepare_series
             # again.
-            start_year = int(last - (quorate_count - 1) /
-                             parameters.urban_adjustment_proportion_good)
+            start_year = int(
+                last - (quorate_count - 1) / parameters.urban_adjustment_proportion_good
+            )
             # Avoid infinite loop.
             start_year = max(start_year, first + 1)
 
@@ -495,10 +516,12 @@ def getfit(points):
     fit.first = min(points)[0]
     fit.last = max(points)[0]
 
-    rmsmin = 1.e20
+    rmsmin = 1.0e20
 
-    for n in range(parameters.urban_adjustment_min_leg,
-                   len(points) - parameters.urban_adjustment_min_leg):
+    for n in range(
+        parameters.urban_adjustment_min_leg,
+        len(points) - parameters.urban_adjustment_min_leg,
+    ):
         knee = points[n][0]
         sl1, sl2, rms, sl = trend2(points, knee, 2)
 
@@ -527,41 +550,48 @@ def trend2(points, xmid, min):
     sa = 0.0
     saa = 0.0
 
-    for (x, v) in points:
+    for x, v in points:
         if invalid(v):
             continue
         x -= xmid
         sa += v
-        saa += v ** 2
+        saa += v**2
         if x > 0.0:
             count1 += 1
             sx1 += x
-            sxx1 += x ** 2
+            sxx1 += x**2
             sxa1 += x * v
         else:
             count0 += 1
             sx0 += x
-            sxx0 += x ** 2
+            sxx0 += x**2
             sxa0 += x * v
 
     if count0 < min or count1 < min:
         return MISSING, MISSING, MISSING, MISSING
 
     count = count0 + count1
-    denom = (count * sxx0 * sxx1 - sxx0 * sx1 ** 2 - sxx1 * sx0 ** 2)
-    sl1 = (sx0 * (sx1 * sxa1 - sxx1 * sa) + sxa0 * (count * sxx1 - sx1 ** 2)) / denom
+    denom = count * sxx0 * sxx1 - sxx0 * sx1**2 - sxx1 * sx0**2
+    sl1 = (sx0 * (sx1 * sxa1 - sxx1 * sa) + sxa0 * (count * sxx1 - sx1**2)) / denom
 
-    sl2 = (sx1 * (sx0 * sxa0 - sxx0 * sa) + sxa1 * (count * sxx0 - sx0 ** 2)) / denom
+    sl2 = (sx1 * (sx0 * sxa0 - sxx0 * sa) + sxa1 * (count * sxx0 - sx0**2)) / denom
 
     ymid = (sa - sl1 * sx0 - sl2 * sx1) / count
-    rms = (count * ymid ** 2 + saa - 2 * ymid * (sa - sl1 * sx0 - sl2 * sx1) + sl1 * sl1 * sxx0 + sl2 * sl2 *
-           sxx1 - 2 * sl1 * sxa0 - 2 * sl2 * sxa1)
+    rms = (
+        count * ymid**2
+        + saa
+        - 2 * ymid * (sa - sl1 * sx0 - sl2 * sx1)
+        + sl1 * sl1 * sxx0
+        + sl2 * sl2 * sxx1
+        - 2 * sl1 * sxa0
+        - 2 * sl2 * sxa1
+    )
 
     # linear regression
     sx = sx0 + sx1
     sxx = sxx0 + sxx1
     sxa = sxa0 + sxa1
-    sl = (count * sxa - sa * sx) / (count * sxx - sx ** 2)
+    sl = (count * sxa - sa * sx) / (count * sxx - sx**2)
 
     return sl1, sl2, rms, sl
 
@@ -578,8 +608,9 @@ def extend_range(series, count, first, last):
     returned.
     """
 
-    iyxtnd = int(round(count / parameters.urban_adjustment_proportion_good)
-                 - (last - first + 1))
+    iyxtnd = int(
+        round(count / parameters.urban_adjustment_proportion_good) - (last - first + 1)
+    )
     if iyxtnd == 0:
         # No extension possible.
         return first, last
@@ -601,7 +632,7 @@ def extend_range(series, count, first, last):
     if iyxtnd > lxend:
         # ... and if we have enough "spare years" extend some or
         # all of the earlier part of the urban record.
-        first -= (iyxtnd - lxend)
+        first -= iyxtnd - lxend
         first = max(first, urban_first)
     last = urban_last
     return first, last
@@ -610,11 +641,11 @@ def extend_range(series, count, first, last):
 def adjust_record(record, fit, adjust_first, adjust_last):
     """Adjust the series according to the previously computed
     parameters.
-    
+
     *record* is a (monthly) station record.  Its data series is replaced,
     but its length is not changed.  Data outside the adjustment range
     (see below) will become MISSING.
-    
+
     *adjust_first*, *adjust_last* are calendar years: the first and
     last years that are subject to adjustment.  Adjustment years run
     from December prior to the year in question through to November
@@ -692,14 +723,18 @@ def good_two_part_fit(fit):
     sl2 = fit.slope2
     knee = fit.knee
 
-    return ((knee - fit.first >= parameters.urban_adjustment_short_leg) and
-            (fit.last - knee >= parameters.urban_adjustment_short_leg) and
-            (abs(sl1) <= parameters.urban_adjustment_steep_leg) and
-            (abs(sl2) <= parameters.urban_adjustment_steep_leg) and
-            (abs(sl2 - sl1) <= parameters.urban_adjustment_steep_leg) and
-            ((sl1 * sl2 >= 0) or
-             (abs(sl1) <= parameters.urban_adjustment_reverse_gradient) or
-             (abs(sl2) <= parameters.urban_adjustment_reverse_gradient)))
+    return (
+        (knee - fit.first >= parameters.urban_adjustment_short_leg)
+        and (fit.last - knee >= parameters.urban_adjustment_short_leg)
+        and (abs(sl1) <= parameters.urban_adjustment_steep_leg)
+        and (abs(sl2) <= parameters.urban_adjustment_steep_leg)
+        and (abs(sl2 - sl1) <= parameters.urban_adjustment_steep_leg)
+        and (
+            (sl1 * sl2 >= 0)
+            or (abs(sl1) <= parameters.urban_adjustment_reverse_gradient)
+            or (abs(sl2) <= parameters.urban_adjustment_reverse_gradient)
+        )
+    )
 
 
 def drop_short_records(record_source):

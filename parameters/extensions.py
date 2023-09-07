@@ -31,7 +31,7 @@ Which (single) source is used for ocean data. The file
 input/SBBX.xxxx is used (case insensitive search).
 """
 
-element = ''
+element = ""
 """
 Which meteorological element is analysed when a (GHCN-M v3
 format) data file contains more than one.
@@ -40,7 +40,7 @@ When using ISTI files, set this to "TAVG", "TMIN", "TMAX" as
 appropriate.
 """
 
-augment_metadata = ''
+augment_metadata = ""
 """
 (In the usual analysis this parameter is empty) This parameter enables
 additional metadata fields to be read from a file.  The format is

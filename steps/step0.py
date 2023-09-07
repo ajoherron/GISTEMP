@@ -31,14 +31,17 @@ def earthly(records):
 
 
 def append_scar():
-    scar_data = open(INPUT_DIR + "antarc1.list").readlines() + open(INPUT_DIR + "antarc2.list").readlines() + open(
-        INPUT_DIR + "antarc3.list").readlines()
+    scar_data = (
+        open(INPUT_DIR + "antarc1.list").readlines()
+        + open(INPUT_DIR + "antarc2.list").readlines()
+        + open(INPUT_DIR + "antarc3.list").readlines()
+    )
     with open(INPUT_DIR + "v4.inv", "a") as file:
         for station in scar_data:
             id = station[:11].strip()
             name = station[12:41]
-            lat = station[43:49].strip().ljust(8, '0')
-            lon = station[49:57].strip().ljust(8, '0')
+            lat = station[43:49].strip().ljust(8, "0")
+            lon = station[49:57].strip().ljust(8, "0")
             file.write(id + " " + lat + "   " + lon + " -999.0 " + name + "\n")
     file.close()
 
@@ -51,7 +54,7 @@ def step0(input):
     (typically, this input object is made by the tool.io.step0_input()
     function).
     """
-    if len(open(INPUT_DIR + "v4.inv", 'r').readlines()[0].split()) > 5:
+    if len(open(INPUT_DIR + "v4.inv", "r").readlines()[0].split()) > 5:
         pass
     else:
         # append scar data to inv file
@@ -59,6 +62,7 @@ def step0(input):
 
         # generate BI for inv file
         from tool import generate_brightness
+
         generate_brightness.run()
 
     # Read each data input into dictionary form.
