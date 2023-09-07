@@ -13,13 +13,15 @@ combined with land data; boxes are combined into latitudinal zones
 (including hemispheric and global zones); annual and seasonal anomalies
 are computed from monthly anomalies.
 """
+
+import os
+
 import parameters
 from settings import *
 from steps import eqarea, giss_data, series
 from steps.giss_data import valid, MISSING
+from steps.step3 import asjson
 from tool import gio
-
-import os
 
 log = open(os.path.join(LOG_DIR, "step5.log"), "w")
 
@@ -242,9 +244,6 @@ def subbox_to_box(meta, cells, celltype="BOX"):
         ngood = sum(valid(a) for a in box_series)
 
         yield (box_series, box_weight, ngood, box)
-
-
-from steps.step3 import asjson
 
 
 def whichbox(boxes, cell):

@@ -17,9 +17,10 @@ Additionally in this step, all stations with short records are discarded
 
 # Standard Python
 import math
+import re
 
-from steps import earth, giss_data
 import parameters
+from steps import earth, giss_data
 from steps.giss_data import valid, invalid, MISSING
 from settings import *
 
@@ -224,8 +225,6 @@ def rural_test():
         ">": lambda x, y: x > y,
         ">=": lambda x, y: x >= y,
     }
-
-    import re
 
     tests = []
     # Process the list of tests into a set of triples:

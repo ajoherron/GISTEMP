@@ -24,6 +24,8 @@ the `StationMetaData` and `SubboxMetaData` classes.
 """
 
 import sys
+import time  # http://docs.python.org/release/2.4.4/lib/module-time.html
+from steps import eqarea
 
 #: The base year for time series data. Data before this time is not
 #: used in calculations.
@@ -62,9 +64,6 @@ def get_last_year():
     We use today's date.  It's much simpler and more reliable than
     anything else.
     """
-
-    # http://docs.python.org/release/2.4.4/lib/module-time.html
-    import time
 
     return time.localtime().tm_year
 
@@ -527,8 +526,6 @@ def boxuid(box, celltype="QXQ"):
     above) or the first 3 characters (2nd form, above).  In the 1st
     form, the first character of celltype determines the last character.
     """
-
-    from steps import eqarea
 
     lat, lon = eqarea.centre(box)
     _, _, w, e = box

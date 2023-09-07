@@ -15,10 +15,9 @@ sequence types, such as lists.  Duck typing rules.
 
 """
 
-# http://www.python.org/doc/2.3.5/lib/module-itertools.html
-import itertools
+import itertools  # http://www.python.org/doc/2.3.5/lib/module-itertools.html
 import math
-import sys
+import doctest
 
 #: Array of band altitudes.
 #:
@@ -301,10 +300,6 @@ class GridCounter:
 
 
 def main():
-    # http://www.python.org/doc/2.3.5/lib/module-doctest.html
-    import doctest
-    import eqarea
-
     return doctest.testmod(eqarea)
 
 
