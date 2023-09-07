@@ -750,9 +750,7 @@ def drop_short_records(record_source):
 
 
 def step2(record_source):
-    # data = record_source
     data = drop_short_records(record_source)
-    # adjusted = data
     adjusted = urban_adjustments(data)
     for record in adjusted:
         yield record

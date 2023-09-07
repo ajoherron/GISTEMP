@@ -80,7 +80,6 @@ def step1(records):
         An iterable source of `giss_data.Series` instances (which it
         will assume are station records).
     """
-    # without_strange = records
     without_strange = drop_strange(records)
     for record in without_strange:
         assert record.first_year == BASE_YEAR

@@ -116,7 +116,6 @@ def to_polar_svg(inp, date=None, inv=None, lat=None, trend=False):
 
 def polar_project(p):
     lat, lon = [math.radians(c) for c in p]
-    # z = math.sin(lat)
     r = math.cos(lat)
     x = math.cos(lon) * r
     y = math.sin(lon) * r
